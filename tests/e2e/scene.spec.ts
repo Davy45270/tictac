@@ -177,25 +177,24 @@ for (const hour of [3, 9, 14, 19]) test(`computed artwork and contrast at ${hour
     await checkOrb('#back');
     const styles = await page.locator('.prompt, .level-label, .answers button, .guide p, .dots span').evaluateAll(elements => elements.map(element => {
         const style = getComputedStyle(element);
-        const hex = (color: string): string => {
+        // Paint the layers on a 1 px canvas and read the pixel back: this resolves any CSS colour syntax
+        // (including color-mix) and composites translucent fills over what lies beneath them.
+        const paint = (...layers: string[]): string => {
             const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = 1;
             const context = canvas.getContext('2d')!;
-            context.fillStyle = color;
-            return context.fillStyle;
+            for (const layer of ['#ffffff', ...layers]) {
+                context.fillStyle = layer;
+                context.fillRect(0, 0, 1, 1);
+            }
+            const [r, g, b] = context.getImageData(0, 0, 1, 1).data;
+            return `#${[r, g, b].map(value => value!.toString(16).padStart(2, '0')).join('')}`;
         };
         // Glass uses the opaque scene fallback; gradients use their button base.
         const glass = style.backdropFilter !== 'none';
-        const fallback = hex(style.getPropertyValue(element.matches('button') ? '--button-base' : '--scene-panel').trim());
-        // A translucent fill is composited over the opaque panel it sits on.
-        const over = (color: string): string => {
-            const value = hex(color);
-            const rgba = /^rgba\((\d+), (\d+), (\d+), ([\d.]+)\)$/.exec(value);
-            if (!rgba) return value;
-            const alpha = Number(rgba[4]);
-            const base = [1, 3, 5].map(start => parseInt(fallback.slice(start, start + 2), 16));
-            return `#${[1, 2, 3].map(i => Math.round(Number(rgba[i]) * alpha + base[i - 1]! * (1 - alpha)).toString(16).padStart(2, '0')).join('')}`;
-        };
-        return { ink: over(style.color), background: glass || style.backgroundImage !== 'none' ? fallback : over(style.backgroundColor) };
+        const fallback = paint(style.getPropertyValue(element.matches('button') ? '--button-base' : '--scene-panel').trim());
+        const background = glass || style.backgroundImage !== 'none' ? fallback : paint(fallback, style.backgroundColor);
+        return { ink: paint(background, style.color), background };
     }));
     for (const style of styles) expect(contrastRatio(style.ink, style.background)).toBeGreaterThanOrEqual(4.5);
     await expect(page.locator('.level-label')).toHaveCSS('font-weight', '700');
