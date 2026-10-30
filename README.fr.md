@@ -8,6 +8,18 @@ Un jeu doux pour apprendre à lire l’heure de 5 à 9 ans. L’enfant déplace 
 
 Huit niveaux : heures pleines, demies, quarts, tranches de cinq minutes, minute près, format 24 h, calcul « dans quelques minutes », moments de la journée. Les niveaux 1 à 7 proposent de lire et de régler. Chaque série compte dix questions ; deux étoiles débloquent le niveau suivant. Après une erreur, on peut réessayer tranquillement.
 
+## Captures d’écran
+
+Interface française sur un téléphone en portrait de 390 × 844 pixels.
+
+| Accueil avec Boubou et étoiles gagnées | Lire les quarts d’heure (niveau 3) |
+| --- | --- |
+| <img src="docs/screenshots/home.png" width="220" alt="Accueil en français avec Boubou sélectionné et les étoiles des niveaux terminés"> | <img src="docs/screenshots/read.png" width="220" alt="Horloge analogique du niveau 3 et quatre réponses en quarts d’heure avant de choisir"> |
+| Régler par tranches de cinq minutes (niveau 4) | Série à trois étoiles |
+| <img src="docs/screenshots/set.png" width="220" alt="Horloge du niveau 4 après glissement de l’aiguille des minutes, affichage numérique à 3:20"> | <img src="docs/screenshots/stars.png" width="220" alt="Fin de série avec trois étoiles et dix bonnes réponses sur dix"> |
+
+Après compilation (`npm run build`) et installation de Chromium (`npx playwright install chromium`), régénérer les quatre images avec `npm run screenshots`. Le scénario mobile activé à la demande écrit les PNG de la fenêtre dans `docs/screenshots/` ; ces images de documentation restent hors du build et du précache PWA.
+
 ## Installer et développer
 
 Dans le navigateur, choisir Installer ou Ajouter à l’écran d’accueil. Après une première visite complète en ligne, le jeu fonctionne hors connexion.

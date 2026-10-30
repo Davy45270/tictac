@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
     "test": "vitest run --pool=threads --maxWorkers=2",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "screenshots": "SCREENSHOTS=1 playwright test tests/e2e/screenshots.spec.ts --project=mobile-chromium"
   },
   "dependencies": {},
   "devDependencies": {
