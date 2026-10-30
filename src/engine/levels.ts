@@ -3,10 +3,10 @@ import type { Step, Time } from './time';
 export type Kind = 'read' | 'set';
 
 const catalog: { step: Step; fr: string; en: string }[] = [
-    { step: 60, fr: 'Heures pleines', en: 'Whole hours' },
+    { step: 60, fr: 'Heures pleines', en: 'On the hour' },
     { step: 30, fr: 'Les demies', en: 'Half hours' },
     { step: 15, fr: 'Les quarts', en: 'Quarter hours' },
-    { step: 5, fr: 'De cinq en cinq', en: 'Five minutes' },
+    { step: 5, fr: 'De cinq en cinq', en: 'Five-minute steps' },
     { step: 1, fr: 'Chaque minute', en: 'Every minute' },
     { step: 5, fr: 'Les 24 heures', en: '24-hour time' },
     { step: 5, fr: 'Dans quelques minutes', en: 'In a few minutes' },
@@ -35,9 +35,9 @@ export function levelInfo(level: number): (typeof levels)[number] {
 
 // Half-open, disjoint ranges cover all 24 hours; noon is a separate lesson-eight moment.
 export const moments = [
-    { id: 'night', from: 0, to: 6, fr: 'nuit · dodo', en: 'night · sleep' },
+    { id: 'night', from: 0, to: 6, fr: 'nuit · dodo', en: 'night · bedtime' },
     { id: 'morning', from: 6, to: 12, fr: 'matin · petit-déjeuner ou école', en: 'morning · breakfast or school' },
-    { id: 'noon', from: 12, to: 14, fr: 'midi · déjeuner', en: 'noon · lunch' },
+    { id: 'noon', from: 12, to: 14, fr: 'midi · déjeuner', en: 'midday · lunch' },
     { id: 'afternoon', from: 14, to: 18, fr: 'après-midi · goûter', en: 'afternoon · snack' },
     { id: 'evening', from: 18, to: 24, fr: 'soir · dîner', en: 'evening · dinner' }
 ] as const;

@@ -103,7 +103,8 @@ function submit(correct: boolean): void {
     // A next button leaves the encouragement visible and gives the child control of the pace.
     const actions = root.querySelector('#actions');
     if (actions) {
-        actions.innerHTML = button(tr('Continuer', 'Continue'), 'continue');
+        if (kind === 'set') actions.innerHTML = '';
+        actions.insertAdjacentHTML('beforeend', button(tr('Continuer', 'Continue'), 'continue'));
         root.querySelector('#continue')?.addEventListener('click', () => {
             expression = 'concentre';
             feedback = '';
@@ -142,7 +143,7 @@ function render(): void {
         }).join('');
         root.innerHTML = `
             <header><h1>TicTac <span aria-hidden="true">◷</span></h1>
-                <p>${tr('À ton rythme, découvre l’heure !', 'Discover time at your own pace!')}</p>
+                <p>${tr('À ton rythme, découvre l’heure !', 'Learn to tell the time at your own pace!')}</p>
             </header>
             <label class="language">${tr('Langue', 'Language')}
                 <select id="locale">
@@ -152,12 +153,12 @@ function render(): void {
             </label>
             <h2>${tr('Choisis ton guide', 'Choose your guide')}</h2>
             <div class="cast">${cast}</div>
-            <fieldset><legend>${tr('Comment jouer ?', 'How to play?')}</legend>
+            <fieldset><legend>${tr('Comment jouer ?', 'How would you like to play?')}</legend>
                 <button id="read" aria-pressed="${kind === 'read'}">${tr('Lire', 'Read')}</button>
                 <button id="set" aria-pressed="${kind === 'set'}">${tr('Régler', 'Set')}</button>
             </fieldset>
             <div class="levels">${levelButtons}</div>
-            <footer>${tr('Sans publicité. Tout reste sur cet appareil.', 'No ads. Everything stays on this device.')} · 0.1.0</footer>`;
+            <footer>${tr('Sans publicité. Tout reste sur cet appareil.', 'No ads. Everything stays on this device.')} · 0.2.0</footer>`;
         root.querySelector<HTMLSelectElement>('#locale')?.addEventListener('change', event => {
             save.locale = (event.target as HTMLSelectElement).value as Locale;
             persist();
@@ -177,12 +178,12 @@ function render(): void {
     }
     if (screen === 'result') {
         const starCount = stars(attempt.score);
-        feedback = starCount ? tr('Tu progresses ! Quelle belle découverte !', 'You’re learning! What a wonderful discovery!') : tr('On réessaie ensemble, à ton rythme.', 'Let’s try again together, at your own pace.');
+        feedback = starCount ? tr('Tu progresses ! Quelle belle découverte !', 'Great work! You’re getting the hang of it!') : tr('On réessaie ensemble, à ton rythme.', 'Let’s try again together, at your own pace.');
         root.innerHTML = `
             ${button(tr('Accueil', 'Home'), 'back')}
             <h1>${tr('Série terminée !', 'Session complete!')}</h1>
             <div class="stars" aria-label="${starCount} ${tr('étoiles', 'stars')}">
-                ${'★'.repeat(starCount)}${'☆'.repeat(3 - starCount)}
+                ${Array.from({ length: 3 }, (_, index) => `<svg viewBox="0 0 100 100" aria-hidden="true" class="${index < starCount ? 'earned' : 'unearned'}"><path d="M50 7 63 34 93 38 71 59 76 90 50 75 24 90 29 59 7 38 37 34Z"/></svg>`).join('')}
             </div>
             <p class="score">${attempt.score}/10</p>${guide()}
             ${button(tr('Encore', 'Again'), 'again')}
@@ -243,7 +244,17 @@ function render(): void {
             })));
         }
         root.querySelector('#check')?.addEventListener('click', () => submit(matchesSetting(question, displayed)));
-        root.querySelectorAll<HTMLButtonElement>('[data-answer]').forEach(control => control.addEventListener('click', () => submit(Number(control.dataset.answer) === question.answer)));
+        let solved = false;
+        root.querySelectorAll<HTMLButtonElement>('[data-answer]').forEach(control => control.addEventListener('click', () => {
+            if (solved) return;
+            const correct = Number(control.dataset.answer) === question.answer;
+            control.classList.add(correct ? 'correct' : 'incorrect');
+            if (correct) {
+                solved = true;
+                control.insertAdjacentHTML('beforeend', '<span class="answer-check" aria-hidden="true">✓</span>');
+            }
+            submit(correct);
+        }));
         root.querySelector('#listen')?.addEventListener('click', () => {
             const voice = new SpeechSynthesisUtterance(spokenPrompt(question, save.locale));
             const local = speechSynthesis.getVoices().find(v => v.localService && v.lang.startsWith(save.locale));

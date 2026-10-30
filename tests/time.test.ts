@@ -31,6 +31,18 @@ describe('clock geometry', () => {
         expect(snapMinute(332, 5)).toBe(55);
         expect(snapMinute(15, 5)).toBe(5);
     });
+    for (const step of [60, 30, 15, 5, 1] as Step[]) {
+        it(`snaps every exact midpoint clockwise at step ${step}`, () => {
+            // Enumerate adjacent legal minutes: the oracle never calls snapMinute.
+            for (let lower = 0; lower < 60; lower += step) {
+                const midpoint = lower * 6 + step * 3;
+                const upper = lower + step === 60 ? 0 : lower + step;
+                for (const turn of [-360, 0, 360]) {
+                    expect(snapMinute(midpoint + turn, step)).toBe(upper);
+                }
+            }
+        });
+    }
     it('always selects a nearest legal minute on the circle', () => {
         const distance = (a: number, b: number): number => Math.min(Math.abs(a - b), 360 - Math.abs(a - b));
         for (const step of [60, 30, 15, 5, 1] as Step[]) for (let angle = 0; angle < 360; angle++) {

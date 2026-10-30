@@ -8,6 +8,14 @@ test('ten first-try answers unlock the next level and persist', async ({
     await page.goto('/');
     await page.locator('[data-level]').nth(0).click();
     await readSession(page);
+    await expect(page.locator('.stars .earned')).toHaveCount(3);
+    expect((await page.locator('.guide svg').boundingBox())!.width).toBeGreaterThanOrEqual(140);
+    for (const id of ['again', 'next']) {
+        const box = (await page.locator(`#${id}`).boundingBox())!;
+        expect(box.height).toBeGreaterThanOrEqual(64);
+        const main = (await page.locator('main').boundingBox())!;
+        expect(box.width).toBeGreaterThanOrEqual(main.width - 32);
+    }
     await page.locator('#back').click();
     await expect(page.locator('[data-level]').nth(1)).toBeEnabled();
     await page.reload();
@@ -21,10 +29,19 @@ test('an error encourages a retry without first-try credit', async ({
     await page.goto('/');
     await page.locator('[data-level]').nth(0).click();
     const s = await state(page);
-    await page.locator('[data-answer]').nth((s.question!.answer + 1) % 4).click();
+    const wrong = page.locator('[data-answer]').nth((s.question!.answer + 1) % 4);
+    await wrong.click();
+    await expect(wrong).toHaveClass('incorrect');
     await expect(page.locator('#guide-message')).toContainText('On réessaie ensemble');
     expect((await state(page)).index).toBe(0);
-    await page.locator('[data-answer]').nth(s.question!.answer).click();
+    const correct = page.locator('[data-answer]').nth(s.question!.answer);
+    await correct.click();
+    await expect(correct).toHaveClass('correct');
+    await expect(correct.locator('.answer-check')).toHaveText('✓');
+    await expect(wrong).toBeEnabled();
+    await wrong.click();
+    expect((await state(page)).index).toBe(1);
+    expect((await state(page)).score).toBe(0);
     await page.locator('#continue').click();
     expect((await state(page)).index).toBe(1);
     expect((await state(page)).score).toBe(0);
@@ -318,6 +335,17 @@ for (const [locale, kind] of [['en', 'read'], ['en', 'set'], ['fr', 'set']] as c
         const instruction = locale === 'en' ? `In ${question.delta} minutes it will be…`
             : `Dans ${question.delta} minutes, il sera…`;
         await expect(page.locator('.instruction')).toHaveText(instruction);
+        if (kind === 'read') {
+            expect((await state(page)).displayed).toEqual(question.start);
+            for (const [hand, angle, radius] of [
+                ['hour', (question.start.h % 12) * 30 + question.start.m / 2, 83],
+                ['minute', question.start.m * 6, 126]
+            ] as const) {
+                const line = page.locator(`#${hand} .needle`);
+                expect(Number(await line.getAttribute('x2'))).toBeCloseTo(160 + Math.sin(angle * Math.PI / 180) * radius, 6);
+                expect(Number(await line.getAttribute('y2'))).toBeCloseTo(160 - Math.cos(angle * Math.PI / 180) * radius, 6);
+            }
+        }
         const startWords = say(question.start, locale);
         if (kind === 'set') {
             await expect(page.locator('#target')).toHaveText(`${startWords} · ${question.start.h % 12 || 12}:${String(question.start.m).padStart(2, '0')}`);
@@ -329,3 +357,21 @@ for (const [locale, kind] of [['en', 'read'], ['en', 'set'], ['fr', 'set']] as c
         expect(phrases[0]!.replace(startWords, '')).not.toContain(say(question.target, locale));
     });
 }
+
+test('home level grid stays within a 360 by 640 viewport', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await page.goto('/');
+    for (const locale of ['fr', 'en']) {
+        await page.locator('#locale').selectOption(locale);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+        await expect(page.locator('[data-level]')).toHaveCount(8);
+        for (const button of await page.locator('[data-level]').all()) {
+            await button.scrollIntoViewIfNeeded();
+            const box = (await button.boundingBox())!;
+            expect(box.x).toBeGreaterThanOrEqual(0);
+            expect(box.x + box.width).toBeLessThanOrEqual(360);
+            expect(box.height).toBeGreaterThanOrEqual(64);
+            expect(await button.evaluate(element => element.scrollWidth <= element.clientWidth)).toBe(true);
+        }
+    }
+});

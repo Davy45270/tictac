@@ -317,3 +317,29 @@ test('answer and Check buttons measure at least 64px high on mobile', async ({ p
     await expect(page.locator('#check')).toBeVisible();
     expect((await page.locator('#check').boundingBox())!.height).toBeGreaterThanOrEqual(64);
 });
+
+test('half-hour drag retains raw angles when the snapped hand reaches twelve early', async ({ page, context }) => {
+    await page.addInitScript(() => localStorage.setItem('tictac.v1', JSON.stringify({
+        version: 1, locale: 'fr', guide: 'panda', records: { '1.read': 9 }
+    })));
+    await page.goto('/');
+    await page.locator('#set').click();
+    await page.locator('[data-level="2"]').click();
+    await page.locator('#hour').focus();
+    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight');
+    const dial = (await state(page)).dial!;
+    const cdp = await context.newCDPSession(page);
+    // At 340° the hand has snapped to 0°, but the finger has not crossed twelve.
+    for (const [index, angle] of [0, 80, 160, 200, 270, 340, 20].entries()) {
+        await cdp.send('Input.dispatchTouchEvent', {
+            type: index === 0 ? 'touchStart' : 'touchMove', touchPoints: [{
+                id: 1, x: dial.cx + Math.sin(angle * Math.PI / 180) * dial.minuteRadius * .92,
+                y: dial.cy - Math.cos(angle * Math.PI / 180) * dial.minuteRadius * .92
+            }]
+        });
+        if (angle === 340) await expect.poll(async () => (await state(page)).displayed).toEqual({ h: 3, m: 0 });
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(async () => (await state(page)).displayed).toEqual({ h: 4, m: 0 });
+    await expect(page.locator('#digital')).toHaveText('4:00');
+});

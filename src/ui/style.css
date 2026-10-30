@@ -59,6 +59,9 @@ fieldset {
     gap: 12px;
     justify-content: center;
     border: 0;
+    min-width: 0;
+    margin-inline: 0;
+    padding-inline: 0;
 }
 legend {
     text-align: center;
@@ -85,7 +88,7 @@ legend {
 }
 .levels {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 12px;
 }
 .levels button {
@@ -186,20 +189,20 @@ nav {
     min-height: 94px;
 }
 .guide svg {
-    width: 100px;
-    min-width: 100px;
-    height: 100px;
+    width: 112px;
+    min-width: 112px;
+    height: 112px;
 }
 .guide p {
     background: #e6f1e9;
     border-radius: 20px;
     padding: 12px;
     max-width: 420px;
-    font-size: .95rem;
+    font-size: 1rem;
 }
 .answers {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 10px;
 }
 .answers button {
@@ -213,10 +216,61 @@ nav {
     margin: 14px auto;
 }
 .stars {
-    font-size: 4rem;
-    color: #835000;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
     animation: celebrate .8s ease-in-out;
+}
+.stars svg {
+    width: 80px;
+    height: 80px;
+    stroke-width: 4px;
+    stroke-linejoin: round;
+}
+.stars .earned {
+    fill: #ffce32;
+    stroke: #815100;
+}
+.stars .unearned {
+    fill: none;
+    stroke: #68757b;
+}
+main[data-screen="result"] .guide {
+    flex-direction: column;
+    gap: 0;
+}
+main[data-screen="result"] .guide svg {
+    width: 160px;
+    min-width: 160px;
+    height: 160px;
+}
+#again,#next {
+    display: block;
+    width: 100%;
+    min-height: 64px;
+    margin-top: 12px;
+    font-weight: bold;
+}
+#next {
+    background: #164e63;
+    color: white;
+}
+#next:hover {
+    background: #0e3c4d;
+}
+.answers .correct {
+    background: #def3df;
+    border-color: #386841;
+    color: #234a2a;
+}
+.answers .incorrect {
+    background: #fff0da;
+    border-color: #9b6029;
+    color: #754315;
+}
+.answer-check {
+    font-weight: bold;
 }
 .score {
     font-size: 2rem;
@@ -241,12 +295,12 @@ nav {
         max-width: 300px;
     }
     .guide svg {
-        width: 80px;
-        min-width: 80px;
-        height: 80px;
+        width: 96px;
+        min-width: 96px;
+        height: 96px;
     }
     .guide {
-        min-height: 80px;
+        min-height: 96px;
     }
     #target {
         font-size: 1.1rem;
@@ -301,14 +355,14 @@ small {
         margin: 8px 0;
     }
     .half-day~.guide {
-        min-height: 64px;
+        min-height: 96px;
     }
     .half-day~.guide svg {
-        height: 64px;
+        height: 96px;
     }
     .half-day~.guide p {
-        font-size: .8rem;
-        padding: 8px;
+        font-size: .95rem;
+        padding: 10px;
     }
     .clock-wrap:has(+.half-day) .period {
         font-size: .8rem;

@@ -31,8 +31,9 @@ export function say(t: Time, locale: Locale = 'fr', style: Style = '12'): string
         return base(h) + ' ' + number(t.m, locale);
     }
     if (!t.m) return h ? `${base(h)} o'clock` : base(h);
-    if (t.m === 30) return `half past ${base(h)}`;
-    return `${t.m === 15 || t.m === 45 ? 'quarter' : number(t.m > 30 ? 60 - t.m : t.m, locale)} ${t.m > 30 ? 'to' : 'past'} ${base(t.m > 30 ? (h + 1) % 12 : h)}`;
+    const hourWord = (hour: number): string => number(hour || 12, 'en');
+    if (t.m === 30) return `half past ${hourWord(h)}`;
+    return `${t.m === 15 || t.m === 45 ? 'quarter' : number(t.m > 30 ? 60 - t.m : t.m, locale)} ${t.m > 30 ? 'to' : 'past'} ${hourWord(t.m > 30 ? (h + 1) % 12 : h)}`;
 }
 
 export const formatDigital = (t: Time, mode: Style = '12'): string => `${mode === '24' ? String(t.h).padStart(2, '0') : t.h % 12 || 12}:${String(t.m).padStart(2, '0')}`;

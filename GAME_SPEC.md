@@ -6,7 +6,7 @@ L’exemple initial « 352° → 55 minutes au pas 5 » contredit l’arrondi au
 
 ## Temps et gestes
 
-Un temps est une paire entière h ∈ [0,23], m ∈ [0,59]. Les angles sont horaires depuis le haut, dans [0,360) : minute = 6m ; heure = 30(h modulo 12) + m/2. Le point exactement au centre donne 0°. L’aimantation choisit le multiple de pas le plus proche, une égalité arrondit dans le sens horaire, 60 devient 0.
+Un temps est une paire entière h ∈ [0,23], m ∈ [0,59]. Les angles sont horaires depuis le haut, dans [0,360) : minute = 6m ; heure = 30(h modulo 12) + m/2. Le point exactement au centre donne 0°. L’aimantation choisit le multiple de pas le plus proche, une égalité arrondit vers la valeur supérieure dans le sens horaire pour chacun des pas 60, 30, 15, 5 et 1 ; 60 devient 0. Ainsi les angles à mi-chemin 180°, 90°, 45°, 15° et 3° donnent respectivement 0, 30, 15, 5 et 1 minute.
 
 Le glissement des minutes fait avancer ou reculer l’heure lorsque l’angle brut du doigt passe du dernier quadrant au premier (ou inversement), avec bouclage sur 24 heures. Le geste conserve le dernier angle brut, indépendamment de la minute aimantée. Une minute arrondie à zéro ne change donc pas encore l’heure si le doigt n’a pas franchi 12. Les échantillons successifs doivent parcourir moins de 90°. Passer de 29 à 30 ne change jamais l’heure. L’aiguille des heures garde les minutes et la moitié de journée, et sélectionne l’angle corrigé de m/2 le plus proche. La comparaison sur cadran ignore la moitié de journée ; la comparaison complète distingue 3:30 et 15:30. L’addition accepte des valeurs négatives et boucle sur 1440 minutes.
 
