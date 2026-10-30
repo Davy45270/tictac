@@ -185,8 +185,17 @@ for (const hour of [3, 9, 14, 19]) test(`computed artwork and contrast at ${hour
         };
         // Glass uses the opaque scene fallback; gradients use their button base.
         const glass = style.backdropFilter !== 'none';
-        const fallback = style.getPropertyValue(element.matches('button') ? '--button-base' : '--scene-panel').trim();
-        return { ink: hex(style.color), background: hex(glass || style.backgroundImage !== 'none' ? fallback : style.backgroundColor) };
+        const fallback = hex(style.getPropertyValue(element.matches('button') ? '--button-base' : '--scene-panel').trim());
+        // A translucent fill is composited over the opaque panel it sits on.
+        const over = (color: string): string => {
+            const value = hex(color);
+            const rgba = /^rgba\((\d+), (\d+), (\d+), ([\d.]+)\)$/.exec(value);
+            if (!rgba) return value;
+            const alpha = Number(rgba[4]);
+            const base = [1, 3, 5].map(start => parseInt(fallback.slice(start, start + 2), 16));
+            return `#${[1, 2, 3].map(i => Math.round(Number(rgba[i]) * alpha + base[i - 1]! * (1 - alpha)).toString(16).padStart(2, '0')).join('')}`;
+        };
+        return { ink: over(style.color), background: glass || style.backgroundImage !== 'none' ? fallback : over(style.backgroundColor) };
     }));
     for (const style of styles) expect(contrastRatio(style.ink, style.background)).toBeGreaterThanOrEqual(4.5);
     await expect(page.locator('.level-label')).toHaveCSS('font-weight', '700');
