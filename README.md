@@ -1,3 +1,6 @@
+<h2 align="center"><a href="https://davy45270.github.io/tictac/">▶ Play / Jouer</a></h2>
+<p align="center">Runs in the browser, on a phone or a computer. Installable, works offline.</p>
+
 # TicTac
 
 [Français](README.fr.md)

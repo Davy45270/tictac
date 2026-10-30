@@ -1,3 +1,6 @@
+<h2 align="center"><a href="https://davy45270.github.io/tictac/">▶ Jouer / Play</a></h2>
+<p align="center">Dans le navigateur, sur téléphone ou ordinateur. Installable, fonctionne hors ligne.</p>
+
 # TicTac
 
 [English](README.md)
