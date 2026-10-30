@@ -7,6 +7,8 @@ test.skip(!process.env.SCREENSHOTS, 'Opt-in README screenshots');
 test.skip(process.env.SCREENSHOTS !== '1', 'Enable with SCREENSHOTS=1');
 test.beforeEach(async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== 'mobile-chromium', 'Mobile portrait screenshots only');
+    // A fixed afternoon keeps the time-of-day landscape identical between runs.
+    await page.clock.setFixedTime(new Date('2026-06-21T15:00:00'));
     await page.addInitScript(() => {
         localStorage.setItem('tictac.v1', JSON.stringify({
             version: 1, locale: 'fr', guide: 'panda', records: {
