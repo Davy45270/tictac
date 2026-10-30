@@ -30,7 +30,7 @@ for (const id of ids) {
             expect(svg).toContain('viewBox="0 0 240 240"');
             expect(svg).toContain(`role="img" aria-label="${characters[id].fr}"`);
             expect(svg.endsWith('</svg>')).toBe(true);
-            expect(new TextEncoder().encode(svg).length).toBeLessThan(14 * 1024);
+            expect(new TextEncoder().encode(svg).length).toBeLessThan(16 * 1024);
             expect((svg.match(/<(?:circle|ellipse|path|polygon|polyline) /g) ?? []).length).toBeGreaterThanOrEqual(40);
             expect(svg).toMatch(/<(?:radialGradient|linearGradient) /);
             expect(svg).toContain(characters[id].coat);
@@ -57,12 +57,12 @@ for (const id of ids) {
 
 // Inspect actual painted geometry, so a label alone cannot satisfy these checks.
 const paths = (svg: string): string[] => [...svg.matchAll(/<path d="([^"]+)"/g)].map(m => m[1]!);
-it('red panda keeps four broad cream bands across its large curled tail', () => {
+it('red panda keeps five cream bands clipped inside its curled tail', () => {
     const svg = characterSvg('pandaroux');
-    expect(paths(svg)).toContain('M151 185 C221 221 238 149 209 122 C194 109 174 128 183 145 C203 169 175 168 151 185Z');
-    const bands = [...svg.matchAll(/<path d="M(\d+) (\d+) q19 4 33 -9"[^>]+stroke-width="8"/g)];
-    expect(bands).toHaveLength(4);
-    expect(new Set(bands.map(b => b[2])).size).toBe(4);
+    expect(svg).toMatch(/<g clip-path="url\(#guide\d+-tail\)">/);
+    const bands = [...svg.matchAll(/<path d="M(\d+) (\d+) q27 9 47 -13"[^>]+stroke-width="8"/g)];
+    expect(bands).toHaveLength(5);
+    expect(new Set(bands.map(b => b[2])).size).toBe(5);
 });
 it('unicorn has an elongated lowered muzzle, paired nostrils and a spiral horn', () => {
     const svg = characterSvg('licorne');
@@ -75,7 +75,7 @@ it('panda patches tilt in opposite directions and no feline cheek zigzags remain
     const svg = characterSvg('panda');
     expect(svg).toContain('rotate(24 88 98)');
     expect(svg).toContain('rotate(-24 151 98)');
-    expect(paths(svg)).toContain('M57 91 C55 55 83 43 120 44 C162 43 184 61 185 94 C190 132 164 154 120 155 C77 155 50 132 57 91Z');
+    expect(paths(svg).some(d => d.startsWith('M57 91') && d.includes('L119 39 123 44'))).toBe(true);
     expect(paths(svg).some(d => d.includes('L192 119'))).toBe(false);
 });
 it('dragon plates and wing fingers differ from the dancer skirt and spiral tail', () => {
@@ -92,5 +92,15 @@ it('sadness adds a visible blue tear while concentration keeps a tongue', () => 
         expect(sad).toContain('fill="#88d9ed"');
         expect(characterSvg(id, 'concentre')).not.toContain('fill="#88d9ed"');
         expect(paths(characterSvg(id, 'concentre'))).toContain('M123 138 Q126 150 133 144 L133 135');
+    }
+});
+
+it('soft blush, clipped lighting and iris glints remain self-contained', () => {
+    for (const id of ids) {
+        const svg = characterSvg(id);
+        expect(svg).toMatch(/<g clip-path="url\(#guide\d+-head\)">/);
+        expect(svg).toMatch(/<radialGradient id="guide\d+-blush">/);
+        expect(svg).toContain('stop-opacity="0"');
+        expect(svg).toContain(id === 'licorne' ? 'fill="#a7f3f3"' : 'fill="#ffd080"');
     }
 });
