@@ -4,16 +4,12 @@ import { readFileSync, existsSync } from 'node:fs';
 import { test } from 'vitest';
 
 // Split spellings keep this guard subject to its own repository-wide rule.
-const forbidden = [
-    ['metal', ' slug'], ['gala', 'ga'], ['wor', 'ms'], ['lemm', 'ings'],
-    ['puzzle', ' bobble'], ['bust', '-a-move'], ['zu', 'ma'], ['bomber', 'man'],
-    ['arka', 'noid'], ['break', 'out'], ['space', ' invaders'], ['pac', '-man'],
-    ['tet', 'ris'], ['soko', 'ban'], ['frog', 'ger'],
-].map(parts => parts.join(''));
+const forbidden = [['metal', ' slug'], ['gala', 'ga'], ['wor', 'ms'], ['lemm', 'ings'], ['puzzle', ' bobble'], ['bust', '-a-move'], ['zu', 'ma'], ['bomber', 'man'], ['arka', 'noid'], ['break', 'out'], ['space', ' invaders'], ['pac', '-man'], ['tet', 'ris'], ['soko', 'ban'], ['frog', 'ger'],].map(parts => parts.join(''));
 const pattern = new RegExp(`\\b(?:${forbidden.join('|')}|HL-?[0-9]{3})\\b`, 'i');
-
 test('tracked files contain no forbidden commercial game names', () => {
-    const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { encoding: 'utf8' }).split('\0').filter(file => file && file !== 'package-lock.json' && existsSync(file));
+    const files = execFileSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], {
+        encoding: 'utf8'
+    }).split('\0').filter(file => file && file !== 'package-lock.json' && existsSync(file));
     const violations = files.flatMap(file => {
         const text = readFileSync(file, 'utf8');
         return text.split('\n').flatMap((line, i) => pattern.test(line) ? [`${file}:${String(i + 1)}`] : []);

@@ -8,26 +8,71 @@ export type Pose = typeof poses[number];
 export type Expression = typeof expressions[number];
 export type Animation = typeof animations[number];
 export const characters = {
-    panda: { fr: 'Boubou', subtitle: 'Panda glouton', motto: 'Manger, foncer, recommencer !', en: 'Boubou', accent: '#35964c', coat: '#fff6e7' },
-    pandaroux: { fr: 'CaliRoux', subtitle: 'Panda roux joueur et câlin', motto: 'Des câlins et des dérapages !', en: 'CaliRoux', accent: '#ed8b25', coat: '#df7133' },
-    dragon: { fr: 'Pestouille', subtitle: 'Dragon assidu', motto: 'Toujours plus loin, toujours plus fort !', en: 'Pestouille', accent: '#e83e42', coat: '#ed4d4c' },
-    singe: { fr: 'Tutu', subtitle: 'Singe en tutu', motto: 'Des pirouettes plein la piste !', en: 'Tutu', accent: '#ec79ac', coat: '#a36a49' },
-    licorne: { fr: 'Lumi', subtitle: 'Licorne joueuse', motto: 'La magie au service de la victoire !', en: 'Lumi', accent: '#9255d5', coat: '#fff9f2' },
+    panda: {
+        fr: 'Boubou', subtitle: 'Panda glouton', motto: 'Manger, foncer, recommencer !', en: 'Boubou', accent: '#35964c', coat: '#fff6e7'
+    },
+    pandaroux: {
+        fr: 'CaliRoux', subtitle: 'Panda roux joueur et câlin', motto: 'Des câlins et des dérapages !', en: 'CaliRoux', accent: '#ed8b25', coat: '#df7133'
+    },
+    dragon: {
+        fr: 'Pestouille', subtitle: 'Dragon assidu', motto: 'Toujours plus loin, toujours plus fort !', en: 'Pestouille', accent: '#e83e42', coat: '#ed4d4c'
+    },
+    singe: {
+        fr: 'Tutu', subtitle: 'Singe en tutu', motto: 'Des pirouettes plein la piste !', en: 'Tutu', accent: '#ec79ac', coat: '#a36a49'
+    },
+    licorne: {
+        fr: 'Lumi', subtitle: 'Licorne joueuse', motto: 'La magie au service de la victoire !', en: 'Lumi', accent: '#9255d5', coat: '#fff9f2'
+    },
 } as const;
 export type Point = readonly [number, number];
-export type Command = { op: 'M' | 'L'; p: Point } | { op: 'C'; a: Point; b: Point; p: Point };
-interface Paint { effect?: boolean; fill: string; stroke: string; width: number }
-export type Primitive = Paint & (
-    { kind: 'ellipse'; x: number; y: number; rx: number; ry: number; rotation: number }
-    | { kind: 'circle'; x: number; y: number; r: number }
-    | { kind: 'polygon'; points: Point[] }
-    | { kind: 'line'; points: Point[] }
-    | { kind: 'path'; commands: Command[]; closed: boolean }
-);
-const ink = '#49333c', cream = '#ffe6be', gold = '#efbd43', dark = '#49383e';
-export const specialCycleMs = { singe: 1500, pandaroux: 1600 } as const;
-const rainbow = ['#f18cbd', '#f4a153', '#f5d65d', '#72c88b', '#75bce4', '#ac87db'];
+export type Command = {
+    op: 'M' | 'L';
+    p: Point
+} | {
+    op: 'C';
+    a: Point;
+    b: Point;
+    p: Point
+};
+interface Paint {
+    effect?: boolean;
+    fill: string;
+    stroke: string;
+    width: number
+}
 
+export type Primitive = Paint & ({
+    kind: 'ellipse';
+    x: number;
+    y: number;
+    rx: number;
+    ry: number;
+    rotation: number
+} | {
+    kind: 'circle';
+    x: number;
+    y: number;
+    r: number
+} | {
+    kind: 'polygon';
+    points: Point[]
+} | {
+    kind: 'line';
+    points: Point[]
+} | {
+    kind: 'path';
+    commands: Command[];
+    closed: boolean
+});
+
+const ink = '#49333c';
+const cream = '#ffe6be';
+const gold = '#efbd43';
+const dark = '#49383e';
+export const specialCycleMs = {
+    singe: 1500, pandaroux: 1600
+} as const;
+const rainbow = ['#f18cbd', '#f4a153', '#f5d65d', '#72c88b', '#75bce4', '#ac87db'];
 export function drawList(id: CharacterId, pose: Pose = 'face', expression: Expression = 'joie', anim: Animation = 'repos', t = 0, motion: 'full' | 'reduce' = 'full'): Primitive[] {
     const reduce = motion === 'reduce';
     const time = reduce || !Number.isFinite(t) ? 0 : t;
@@ -38,26 +83,61 @@ export function drawList(id: CharacterId, pose: Pose = 'face', expression: Expre
     const rolling = !reduce && anim === 'special' && id === 'pandaroux';
     const list: Primitive[] = [];
     const coat = characters[id].coat;
-    const sheen = { panda: '#ffffff', pandaroux: '#f3a365', dragon: '#ff8980', singe: '#c18d65', licorne: '#ffffff' }[id];
-    const back = pose === 'dos', side = pose === 'profil';
+    const accent = characters[id].accent;
+    const sheen = {
+        panda: '#ffffff', pandaroux: '#f3a365', dragon: '#ff8980', singe: '#c18d65', licorne: '#ffffff'
+    } [id];
+    const back = pose === 'dos';
+    const side = pose === 'profil';
     const point = (x: number, y: number): Point => {
-        const dx = x - 120, dy = y - 135;
-        return [120 + (rolling ? 18 * Math.sin(lean) : 0) + dx * Math.cos(lean) - dy * Math.sin(lean), 135 + bounce + dx * Math.sin(lean) + dy * Math.cos(lean)];
+        const dx = x - 120;
+        const dy = y - 135;
+        return[120 + (rolling ? 18 * Math.sin(lean) : 0) + dx * Math.cos(lean) - dy * Math.sin(lean), 135 + bounce + dx * Math.sin(lean) + dy * Math.cos(lean)];
     };
-    const paint = (fill: string, width = 3, stroke = ink): Paint => ({ fill, stroke, width });
+    const paint = (fill: string, width = 3, stroke = ink): Paint => ({
+        fill, stroke, width
+    });
     const ellipse = (x: number, y: number, rx: number, ry: number, fill: string, rotation = 0, width = 3, stroke = ink): void => {
-        const p = point(x, y); list.push({ kind: 'ellipse', x: p[0], y: p[1], rx, ry, rotation: rotation + lean, ...paint(fill, width, stroke) });
+        const p = point(x, y);
+        list.push({
+            kind: 'ellipse', x: p[0], y: p[1], rx, ry, rotation: rotation + lean, ...paint(fill, width, stroke)
+        });
     };
     const circle = (x: number, y: number, r: number, fill: string, width = 0): void => {
-        const p = point(x, y); list.push({ kind: 'circle', x: p[0], y: p[1], r, ...paint(fill, width) });
+        const p = point(x, y);
+        list.push({
+            kind: 'circle', x: p[0], y: p[1], r, ...paint(fill, width)
+        });
     };
-    const polygon = (points: Point[], fill: string, width = 3): void => { list.push({ kind: 'polygon', points: points.map(p => point(...p)), ...paint(fill, width) }); };
-    const line = (points: Point[], stroke: string, width = 3): void => { list.push({ kind: 'line', points: points.map(p => point(...p)), ...paint('', width, stroke) }); };
-    const path = (start: Point, curves: [Point, Point, Point][], fill: string, width = 3, closed = true, stroke = ink): void => {
-        list.push({ kind: 'path', commands: [{ op: 'M', p: point(...start) }, ...curves.map(([a, b, p]): Command => ({ op: 'C', a: point(...a), b: point(...b), p: point(...p) }))], closed, ...paint(fill, width, stroke) });
+    const polygon = (points: Point[], fill: string, width = 3): void => {
+        list.push({
+            kind: 'polygon', points: points.map(p => point(...p)), ...paint(fill, width)
+        });
+    };
+    const line = (points: Point[], stroke: string, width = 3): void => {
+        list.push({
+            kind: 'line', points: points.map(p => point(...p)), ...paint('', width, stroke)
+        });
+    };
+    const path = (start: Point, curves: [Point, Point, Point] [], fill: string, width = 3, closed = true, stroke = ink): void => {
+        list.push({
+            kind: 'path', commands: [{
+                op: 'M', p: point(...start)
+            },
+            ...curves.map(([a, b, p]): Command => ({
+                op: 'C', a: point(...a), b: point(...b), p: point(...p)
+            }))], closed, ...paint(fill, width, stroke)
+        });
     };
     const star = (x: number, y: number, r: number, fill: string): void => {
-        polygon(Array.from({ length: 10 }, (_, i): Point => { const a = i * Math.PI / 5 - Math.PI / 2, s = i % 2 ? r * 0.45 : r; return [x + Math.cos(a) * s, y + Math.sin(a) * s]; }), fill, 1.5);
+        polygon(Array.from({
+            length: 10
+        },
+        (_, i): Point => {
+            const a = i * Math.PI / 5 - Math.PI / 2;
+            const s = i % 2 ? r * 0.45 : r;
+            return[x + Math.cos(a) * s, y + Math.sin(a) * s];
+        }), fill, 1.5);
     };
     if (rolling) {
         // Tucked head and paws sit inside a round coat; the striped tail wraps its rim.
@@ -75,10 +155,23 @@ export function drawList(id: CharacterId, pose: Pose = 'face', expression: Expre
         }
         const bodyEnd = list.length;
         // Trail and hearts stay in stage space while the ball turns and travels.
-        for (let i = 0; i < 3; i++) list.push({ kind: 'line', points: [[39 + i * 5, 153 + i * 10], [69 + i * 5, 149 + i * 10]], ...paint('', 3, '#ed8b25') });
+        for (let i = 0; i < 3; i++) list.push({
+            kind: 'line', points: [[39 + i * 5, 153 + i * 10], [69 + i * 5, 149 + i * 10]], ...paint('', 3, '#ed8b25')
+        });
         for (let i = 0; i < 3; i++) {
-            const x = 64 + i * 56, y = 45 - Math.sin(time / 300 + i) * 12;
-            list.push({ kind: 'path', commands: [{ op: 'M', p: [x, y + 8] }, { op: 'C', a: [x - 23, y - 7], b: [x - 6, y - 18], p: [x, y - 6] }, { op: 'C', a: [x + 9, y - 20], b: [x + 22, y - 4], p: [x, y + 8] }], closed: true, ...paint('#f397ad', 1) });
+            const x = 64 + i * 56;
+            const y = 45 - Math.sin(time / 300 + i) * 12;
+            list.push({
+                kind: 'path', commands: [{
+                    op: 'M', p: [x, y + 8]
+                },
+                {
+                    op: 'C', a: [x - 23, y - 7], b: [x - 6, y - 18], p: [x, y - 6]
+                },
+                {
+                    op: 'C', a: [x + 9, y - 20], b: [x + 22, y - 4], p: [x, y + 8]
+                }], closed: true, ...paint('#f397ad', 1)
+            });
         }
         for (const p of list.slice(bodyEnd)) p.effect = true;
         return list;
@@ -112,11 +205,18 @@ export function drawList(id: CharacterId, pose: Pose = 'face', expression: Expre
             const c = point(120, 180);
             for (const p of list.slice(skirtStart)) {
                 const flare = (v: Point): Point => {
-                    const dx = v[0] - c[0], dy = v[1] - c[1];
+                    const dx = v[0] - c[0];
+                    const dy = v[1] - c[1];
                     const radial = (dx * Math.cos(lean) + dy * Math.sin(lean)) * 0.35;
-                    return [v[0] + radial * Math.cos(lean), v[1] + radial * Math.sin(lean)];
+                    return[v[0] + radial * Math.cos(lean), v[1] + radial * Math.sin(lean)];
                 };
-                if (p.kind === 'path') for (const command of p.commands) { command.p = flare(command.p); if (command.op === 'C') { command.a = flare(command.a); command.b = flare(command.b); } }
+                if (p.kind === 'path') for (const command of p.commands) {
+                    command.p = flare(command.p);
+                    if (command.op === 'C') {
+                        command.a = flare(command.a);
+                        command.b = flare(command.b);
+                    }
+                }
                 if (p.kind === 'line') p.points = p.points.map(flare);
             }
         }
@@ -126,7 +226,7 @@ export function drawList(id: CharacterId, pose: Pose = 'face', expression: Expre
     if (id === 'pandaroux' || id === 'licorne') {
         for (const x of side ? [108] : [80, 159]) {
             path([x - 17, 73], [[[x - 19, 39], [x - 3, 31], [x, 39]], [[x + 24, 49], [x + 19, 66], [x + 16, 77]]], id === 'pandaroux' ? cream : coat);
-            polygon([[x - 10, 63], [x - 4, 45], [x + 10, 65]], id === 'pandaroux' ? '#bd6036' : '#f2b8cc', 0);
+            polygon([[x - 10, 63], [x - 4, 45], [x + 10, 65]], accent, 0);
         }
     } else if (id !== 'dragon') for (const x of side ? [103] : [76, 164]) {
         ellipse(x, 68, id === 'singe' ? 26 : 21, 23, id === 'panda' ? dark : coat);
@@ -156,7 +256,8 @@ export function drawList(id: CharacterId, pose: Pose = 'face', expression: Expre
                 ellipse(138, 96, 25, 30, '#eac0a9', 0.2, 0);
                 ellipse(163, 119, 28, 19, '#eac0a9', 0, 0);
             } else {
-                ellipse(102, 95, 27, 31, '#eac0a9', -0.2, 0); ellipse(139, 95, 27, 31, '#eac0a9', 0.2, 0);
+                ellipse(102, 95, 27, 31, '#eac0a9', -0.2, 0);
+                ellipse(139, 95, 27, 31, '#eac0a9', 0.2, 0);
                 ellipse(121, 119, 39, 21, '#eac0a9', 0, 0);
             }
         }
@@ -164,10 +265,15 @@ export function drawList(id: CharacterId, pose: Pose = 'face', expression: Expre
         const eyes = side ? [140] : [97, 145];
         for (const x of eyes) {
             if (id === 'panda') ellipse(x, 97, 20, 24, dark, x < 120 ? 0.35 : -0.35, 0);
-            if (expression === 'dodo') { path([x - 10, 96], [[[x - 4, 103], [x + 5, 103], [x + 10, 95]]], '', 3, false); continue; }
+            if (expression === 'dodo') {
+                path([x - 10, 96], [[[x - 4, 103], [x + 5, 103], [x + 10, 95]]], '', 3, false);
+                continue;
+            }
             ellipse(x, 94, 12, expression === 'surprise' ? 19 : 16, '#fffdf4', 0, 2);
             ellipse(x + (side ? 3 : 1), expression === 'triste' ? 99 : 97, 7, 10, id === 'dragon' ? '#d8a129' : id === 'licorne' ? '#4d9ed4' : '#6b4d3b', 0, 0);
-            ellipse(x + 2, 98, 4, 7, dark, 0, 0); circle(x - 2, 90, 3.7, '#ffffff'); circle(x + 5, 98, 1.8, '#ffffff');
+            ellipse(x + 2, 98, 4, 7, dark, 0, 0);
+            circle(x - 2, 90, 3.7, '#ffffff');
+            circle(x + 5, 98, 1.8, '#ffffff');
             if (expression === 'concentre') line([[x - 12, 78], [x + 9, 84]], ink, 4);
             if (expression === 'triste') line([[x - 10, 79 + (x < 120 ? 6 : 0)], [x + 10, 79 + (x < 120 ? 0 : 6)]], ink, 3);
         }
@@ -181,8 +287,17 @@ export function drawList(id: CharacterId, pose: Pose = 'face', expression: Expre
         } else path([112, expression === 'triste' ? 131 : 126], [[[121, expression === 'triste' ? 121 : 130], [130, expression === 'triste' ? 121 : 130], [137, expression === 'triste' ? 131 : 126]]], '', 2.5, false);
         if (side) for (const p of list.slice(mouthStart)) {
             const shift = (v: Point): Point => [v[0] + 34 * Math.cos(lean), v[1] + 34 * Math.sin(lean)];
-            if (p.kind === 'path') for (const c of p.commands) { c.p = shift(c.p); if (c.op === 'C') { c.a = shift(c.a); c.b = shift(c.b); } }
-            else if (p.kind === 'ellipse') { const v = shift([p.x, p.y]); p.x = v[0]; p.y = v[1]; }
+            if (p.kind === 'path') for (const c of p.commands) {
+                c.p = shift(c.p);
+                if (c.op === 'C') {
+                    c.a = shift(c.a);
+                    c.b = shift(c.b);
+                }
+            } else if (p.kind === 'ellipse') {
+                const v = shift([p.x, p.y]);
+                p.x = v[0];
+                p.y = v[1];
+            }
         }
     }
     if (id === 'licorne') {
@@ -191,39 +306,68 @@ export function drawList(id: CharacterId, pose: Pose = 'face', expression: Expre
         if (!back) for (let i = 0; i < 6; i++) path([89 + i * 10, 67], [[[92 + i * 10, 48], [111 + i * 10, 53], [111 + i * 9, 74]]], rainbow[i] ?? cream, 7, false, rainbow[i]);
     }
     if (id === 'singe') {
-        for (let i = 0; i < 5; i++) { const a = i * Math.PI * 2 / 5; ellipse(164 + Math.cos(a) * 9, 66 + Math.sin(a) * 9, 8, 6, '#f28aba', a, 1); }
+        for (let i = 0; i < 5; i++) {
+            const a = i * Math.PI * 2 / 5;
+            ellipse(164 + Math.cos(a) * 9, 66 + Math.sin(a) * 9, 8, 6, accent, a, 1);
+        }
         circle(164, 66, 5, gold, 1);
     }
     if (!back && id === 'panda') {
         line([[70, 176], [58, 104]], '#579d50', 7);
-        for (let i = 0; i < 3; i++) { line([[58 + i * 3, 116 + i * 18], [67 + i * 3, 114 + i * 18]], cream, 2); ellipse(49, 114 + i * 16, 15, 5, '#5fb868', 0.5, 1); }
+        for (let i = 0; i < 3; i++) {
+            line([[58 + i * 3, 116 + i * 18], [67 + i * 3, 114 + i * 18]], cream, 2);
+            ellipse(49, 114 + i * 16, 15, 5, accent, 0.5, 1);
+        }
         path([130, 169], [[[136, 149], [175, 149], [183, 169]]], '', 4, false);
         path([126, 170], [[[134, 183], [128, 197], [142, 198]], [[157, 203], [178, 199], [181, 191]], [[184, 182], [187, 176], [188, 170]]], '#c58f56');
         for (let i = 0; i < 4; i++) line([[136 + i * 12, 173], [140 + i * 10, 196]], '#8e613c', 1.5);
         for (const y of [180, 188]) line([[132, y], [183, y]], '#eed0a0', 2);
-        for (const x of [140, 157]) { ellipse(x, 166, 11, 9, '#ffe6b5', 0, 1); line([[x - 3, 161], [x, 165], [x + 3, 161]], '#bd915e', 1); }
-        circle(177, 166, 9, '#dc6a54', 1); ellipse(180, 155, 7, 3, '#599c54', -0.5, 1);
+        for (const x of [140, 157]) {
+            ellipse(x, 166, 11, 9, '#ffe6b5', 0, 1);
+            line([[x - 3, 161], [x, 165], [x + 3, 161]], '#bd915e', 1);
+        }
+        circle(177, 166, 9, '#dc6a54', 1);
+        ellipse(180, 155, 7, 3, '#599c54', -0.5, 1);
     }
     if (!back && id === 'dragon') {
-        polygon([[87, 155], [119, 161], [152, 151], [156, 186], [122, 195], [86, 184]], '#5795b4');
+        polygon([[87, 155], [119, 161], [152, 151], [156, 186], [122, 195], [86, 184]], accent);
         path([90, 153], [[[102, 146], [111, 151], [121, 158]], [[130, 150], [143, 145], [151, 150]], [[152, 162], [151, 174], [152, 182]], [[141, 178], [130, 183], [122, 190]], [[111, 183], [101, 178], [89, 180]]], '#fff2d4', 2);
         line([[121, 158], [122, 188]], '#c69c69', 2);
-        for (const y of [162, 170]) { line([[96, y], [113, y + 5]], '#bb9d7a', 1.5); line([[131, y + 4], [146, y - 2]], '#bb9d7a', 1.5); }
+        for (const y of [162, 170]) {
+            line([[96, y], [113, y + 5]], '#bb9d7a', 1.5);
+            line([[131, y + 4], [146, y - 2]], '#bb9d7a', 1.5);
+        }
     }
     // Specials remain procedural, with no particles at all in reduced motion.
     const effectsStart = list.length;
     if (!reduce && (anim === 'special' || anim === 'celebration')) {
-        if (id === 'panda') for (let i = 0; i < 10; i++) { const a = time / 260 + i * 0.8; ellipse(120 + Math.cos(a) * 91, 124 + Math.sin(a) * 65, 12, 4, '#65b85e', a, 1); }
+        if (id === 'panda') for (let i = 0; i < 10; i++) {
+            const a = time / 260 + i * 0.8;
+            ellipse(120 + Math.cos(a) * 91, 124 + Math.sin(a) * 65, 12, 4, '#65b85e', a, 1);
+        }
         if (id === 'pandaroux') {
             for (let i = 0; i < 3; i++) path([28 + i * 7, 160 + i * 13], [[[43, 143 + i * 10], [62, 145 + i * 10], [73, 157 + i * 10]]], '', 3, false);
-            for (let i = 0; i < 3; i++) { const x = 64 + i * 56, y = 52 - Math.sin(time / 300 + i) * 17; path([x, y + 8], [[[x - 23, y - 7], [x - 6, y - 18], [x, y - 6]], [[x + 9, y - 20], [x + 22, y - 4], [x, y + 8]]], '#f397ad', 1); }
+            for (let i = 0; i < 3; i++) {
+                const x = 64 + i * 56;
+                const y = 52 - Math.sin(time / 300 + i) * 17;
+                path([x, y + 8], [[[x - 23, y - 7], [x - 6, y - 18], [x, y - 6]], [[x + 9, y - 20], [x + 22, y - 4], [x, y + 8]]], '#f397ad', 1);
+            }
         }
         if (id === 'dragon') {
             ellipse(120, 214, 83, 14, '', 0, 2, '#69bce7');
-            for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + time / 1200; polygon([[120 + Math.cos(a) * 75, 212 + Math.sin(a) * 11], [124 + Math.cos(a) * 75, 208 + Math.sin(a) * 11], [128 + Math.cos(a) * 75, 213 + Math.sin(a) * 11]], '#69bce7', 0); }
+            for (let i = 0; i < 8; i++) {
+                const a = i * Math.PI / 4 + time / 1200;
+                polygon([[120 + Math.cos(a) * 75, 212 + Math.sin(a) * 11], [124 + Math.cos(a) * 75, 208 + Math.sin(a) * 11], [128 + Math.cos(a) * 75, 213 + Math.sin(a) * 11]], '#69bce7', 0);
+            }
             if (anim === 'special') path([154, 121], [[[177, 97], [187, 128], [213, 89 + wave * 8]], [[210, 116], [234, 126], [218, 141]], [[195, 151], [177, 132], [154, 121]]], '#f5a243', 2);
         }
-        if (id === 'singe') { ellipse(120, 184, 94, 17, '', 0, 3, '#f18cbd'); for (let i = 0; i < 5; i++) { const a = i * 1.3 + time / 400; star(120 + Math.cos(a) * 91, 130 + Math.sin(a) * 65, 9, gold); } }
+        if (id === 'singe') {
+            ellipse(120, 184, 94, 17, '', 0, 3, '#f18cbd');
+            for (let i = 0; i < 5; i++) {
+                const a = i * 1.3 + time / 400;
+                star(120 + Math.cos(a) * 91, 130 + Math.sin(a) * 65, 9, gold);
+            }
+        }
         if (id === 'licorne') {
             for (let i = 0; i < 6; i++) path([24, 170 + i * 5], [[[66, 75 + wave * 6 + i * 6], [177, 35 + i * 7], [215, 74 + i * 5]]], rainbow[i] ?? cream, 4, false);
             star(211, 70 + wave * 12, 16, '#ffda60');
@@ -232,6 +376,7 @@ export function drawList(id: CharacterId, pose: Pose = 'face', expression: Expre
     for (const p of list.slice(effectsStart)) p.effect = true;
     return list;
 }
-
 /** Stable registry order, independent of the current selection. */
-export function others(id: CharacterId): CharacterId[] { return ids.filter(other => other !== id); }
+export function others(id: CharacterId): CharacterId[] {
+    return ids.filter(other => other !== id);
+}

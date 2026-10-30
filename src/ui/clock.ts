@@ -1,39 +1,110 @@
 import { minuteAngle, hourAngle, angleFromPoint, dragHour, dragMinute, addMinutes, type Time, type Step } from '../engine/time';
 import { say, type Locale } from '../engine/text';
-export const point = (angle: number, radius: number): [number, number] => [160 + Math.sin(angle * Math.PI / 180) * radius,160 - Math.cos(angle * Math.PI / 180) * radius];
-export function clockSvg(t: Time, locale: Locale, adjustable: boolean, hoursOnly: boolean): string {
- const hand = (id: string, a: number, r: number, color: string, width: number): string => {
-  const [x,y] = point(a,r);
-  return `<g id="${id}" ${adjustable && !(hoursOnly && id === 'minute') ? `tabindex="0" role="slider" aria-label="${locale === 'fr' ? id === 'hour' ? 'Aiguille des heures' : 'Aiguille des minutes' : id === 'hour' ? 'Hour hand' : 'Minute hand'}" aria-valuemin="0" aria-valuemax="${id === 'hour' ? 11 : 59}" aria-valuenow="${id === 'hour' ? t.h % 12 : t.m}" aria-valuetext="${say(t,locale)}"` : ''}><line class="hit" x1="160" y1="160" x2="${x}" y2="${y}"/><line class="needle" x1="160" y1="160" x2="${x}" y2="${y}" stroke="${color}" stroke-width="${width}"/></g>`;
- };
- return `<svg id="clock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" aria-label="${locale === 'fr' ? 'Horloge' : 'Clock'}"><circle cx="160" cy="160" r="154" fill="white" stroke="#164e63" stroke-width="5"/>${Array.from({length:60},(_,i) => { const a=point(i*6, i%5 ? 143 : 138),b=point(i*6,149);return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#48616b" stroke-width="${i%5 ? 1 : 3}"/>`; }).join('')}${Array.from({length:12},(_,i) => {const [x,y]=point((i+1)*30,119);return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central">${i+1}</text>`;}).join('')}${hand('hour',hourAngle(t),83,'#9b2960',10)}${hand('minute',minuteAngle(t),126,'#066b89',6)}<circle cx="160" cy="160" r="9" fill="#164e63" pointer-events="none"/></svg>`;
+
+export const point = (angle: number, radius: number): [number, number] => [
+    160 + Math.sin(angle * Math.PI / 180) * radius,
+    160 - Math.cos(angle * Math.PI / 180) * radius
+];
+
+export function clockSvg(time: Time, locale: Locale, adjustable: boolean, hoursOnly: boolean): string {
+    const hand = (id: string, angle: number, radius: number, color: string, width: number): string => {
+        const [x, y] = point(angle, radius);
+        const label = locale === 'fr'
+            ? id === 'hour' ? 'Aiguille des heures' : 'Aiguille des minutes'
+            : id === 'hour' ? 'Hour hand' : 'Minute hand';
+        const attributes = adjustable && !(hoursOnly && id === 'minute')
+            ? `tabindex="0" role="slider" aria-label="${label}" aria-valuemin="0" aria-valuemax="${id === 'hour' ? 11 : 59}" aria-valuenow="${id === 'hour' ? time.h % 12 : time.m}" aria-valuetext="${say(time, locale)}"`
+            : '';
+        return `<g id="${id}" ${attributes}>
+            <line class="hit" x1="160" y1="160" x2="${x}" y2="${y}"/>
+            <line class="needle" x1="160" y1="160" x2="${x}" y2="${y}" stroke="${color}" stroke-width="${width}"/>
+        </g>`;
+    };
+    const ticks = Array.from({length: 60}, (_, index) => {
+        const start = point(index * 6, index % 5 ? 143 : 138);
+        const end = point(index * 6, 149);
+        return `<line x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}" stroke="#48616b" stroke-width="${index % 5 ? 1 : 3}"/>`;
+    }).join('');
+    const numbers = Array.from({length: 12}, (_, index) => {
+        const [x, y] = point((index + 1) * 30, 119);
+        return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central">${index + 1}</text>`;
+    }).join('');
+    return `<svg id="clock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" aria-label="${locale === 'fr' ? 'Horloge' : 'Clock'}">
+        <circle cx="160" cy="160" r="154" fill="white" stroke="#164e63" stroke-width="5"/>
+        ${ticks}${numbers}
+        ${hand('hour', hourAngle(time), 83, '#9b2960', 10)}
+        ${hand('minute', minuteAngle(time), 126, '#066b89', 6)}
+        <circle cx="160" cy="160" r="9" fill="#164e63" pointer-events="none"/>
+    </svg>`;
 }
-function distance(x: number,y: number,a: number,r: number): number {
- const end=point(a,r),dx=end[0]-160,dy=end[1]-160;
- const k=Math.max(0,Math.min(1,((x-160)*dx+(y-160)*dy)/(r*r)));
- return Math.hypot(x-160-k*dx,y-160-k*dy);
+
+function distanceToHand(x: number, y: number, angle: number, radius: number): number {
+    const end = point(angle, radius);
+    const dx = end[0] - 160;
+    const dy = end[1] - 160;
+    const projection = Math.max(0, Math.min(1, ((x - 160) * dx + (y - 160) * dy) / (radius * radius)));
+    return Math.hypot(x - 160 - projection * dx, y - 160 - projection * dy);
 }
-export function wireClock(svg: SVGSVGElement, initial: Time, step: Step, locale: Locale, change: (t: Time) => void): void {
- let time=initial, active: 'hour' | 'minute' | undefined;
- const update = (next: Time): void => {
-  time=next;
-  for (const [id,a,r] of [['hour',hourAngle(time),83],['minute',minuteAngle(time),126]] as const) {
-   const group=svg.querySelector(`#${id}`);const [x,y]=point(a,r);
-   group?.querySelectorAll('line').forEach(line => {line.setAttribute('x2',String(x));line.setAttribute('y2',String(y));});
-   group?.setAttribute('aria-valuetext',say(time,locale));group?.setAttribute('aria-valuenow',String(id==='hour' ? time.h%12 : time.m));
-  }
-  change(time);
- };
- const coords = (e: PointerEvent): [number,number] => {const b=svg.getBoundingClientRect();return [(e.clientX-b.left)*320/b.width,(e.clientY-b.top)*320/b.height];};
- svg.addEventListener('pointerdown',e => {
-  const [x,y]=coords(e);const dh=distance(x,y,hourAngle(time),83),dm=step===60 ? Infinity : distance(x,y,minuteAngle(time),126);
-  if (Math.min(dh,dm)>25) return;
-  active=dh<=dm+1e-6 ? 'hour' : 'minute';svg.setPointerCapture(e.pointerId);e.preventDefault();
- });
- svg.addEventListener('pointermove',e => {if (!active) return;e.preventDefault();const [x,y]=coords(e);if(Math.hypot(x-160,y-160)<12)return;const a=angleFromPoint(160,160,x,y);update(active==='hour' ? dragHour(time,a) : dragMinute(time,a,step));});
- const end = (): void => {active=undefined;};svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);
- for(const id of ['hour','minute'] as const) svg.querySelector(`#${id}`)?.addEventListener('keydown',event => {
-  const e=event as KeyboardEvent;if(!['ArrowLeft','ArrowDown','ArrowRight','ArrowUp'].includes(e.key) || (id==='minute' && step===60))return;e.preventDefault();const sign=e.key==='ArrowLeft'||e.key==='ArrowDown' ? -1 : 1;
-  update(addMinutes(time,sign*(id==='hour'?60:step)));
- });
+
+export function wireClock(svg: SVGSVGElement, initial: Time, step: Step, locale: Locale, change: (time: Time) => void): (next: Time) => void {
+    let time = initial;
+    let activeHand: 'hour' | 'minute' | undefined;
+    let activePointerId: number | undefined;
+    const update = (next: Time): void => {
+        time = next;
+        for (const [id, angle, radius] of [['hour', hourAngle(time), 83], ['minute', minuteAngle(time), 126]] as const) {
+            const group = svg.querySelector(`#${id}`);
+            const [x, y] = point(angle, radius);
+            group?.querySelectorAll('line').forEach(line => {
+                line.setAttribute('x2', String(x));
+                line.setAttribute('y2', String(y));
+            });
+            group?.setAttribute('aria-valuetext', say(time, locale));
+            group?.setAttribute('aria-valuenow', String(id === 'hour' ? time.h % 12 : time.m));
+        }
+        change(time);
+    };
+    const coordinates = (event: PointerEvent): [number, number] => {
+        const bounds = svg.getBoundingClientRect();
+        return [(event.clientX - bounds.left) * 320 / bounds.width, (event.clientY - bounds.top) * 320 / bounds.height];
+    };
+    svg.addEventListener('pointerdown', event => {
+        if (activePointerId !== undefined) return;
+        const [x, y] = coordinates(event);
+        const hourDistance = distanceToHand(x, y, hourAngle(time), 83);
+        const minuteDistance = step === 60 ? Infinity : distanceToHand(x, y, minuteAngle(time), 126);
+        if (Math.min(hourDistance, minuteDistance) > 25) return;
+        // The first finger owns the entire gesture, including capture outside the dial.
+        activePointerId = event.pointerId;
+        activeHand = hourDistance <= minuteDistance + 1e-6 ? 'hour' : 'minute';
+        svg.setPointerCapture(event.pointerId);
+        event.preventDefault();
+    });
+    svg.addEventListener('pointermove', event => {
+        if (!activeHand || event.pointerId !== activePointerId) return;
+        event.preventDefault();
+        const [x, y] = coordinates(event);
+        if (Math.hypot(x - 160, y - 160) < 12) return;
+        const angle = angleFromPoint(160, 160, x, y);
+        update(activeHand === 'hour' ? dragHour(time, angle) : dragMinute(time, angle, step));
+    });
+    const end = (event: PointerEvent): void => {
+        if (event.pointerId !== activePointerId) return;
+        activeHand = undefined;
+        activePointerId = undefined;
+        if (svg.hasPointerCapture(event.pointerId)) svg.releasePointerCapture(event.pointerId);
+    };
+    svg.addEventListener('pointerup', end);
+    svg.addEventListener('pointercancel', end);
+    svg.addEventListener('lostpointercapture', end);
+    for (const id of ['hour', 'minute'] as const) {
+        svg.querySelector(`#${id}`)?.addEventListener('keydown', event => {
+            const keyboardEvent = event as KeyboardEvent;
+            if (!['ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp'].includes(keyboardEvent.key) || (id === 'minute' && step === 60)) return;
+            keyboardEvent.preventDefault();
+            const direction = keyboardEvent.key === 'ArrowLeft' || keyboardEvent.key === 'ArrowDown' ? -1 : 1;
+            update(addMinutes(time, direction * (id === 'hour' ? 60 : step)));
+        });
+    }
+    return update;
 }
