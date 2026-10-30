@@ -1,4 +1,6 @@
 import { test, expect, state, readSession } from './helpers';
+import { hourAngle, minuteAngle } from '../../src/engine/time';
+import { say } from '../../src/engine/text';
 
 test('ten first-try answers unlock the next level and persist', async ({
     page
@@ -49,24 +51,35 @@ test('touch controls are large and minute hand responds to arrows', async ({
 }) => {
     await page.addInitScript(() => localStorage.setItem('tictac.v1', JSON.stringify({
         version: 1, locale: 'fr', guide: 'panda', records: {
-            '1.read': 9
+            '1.read': 9, '2.read': 9, '3.read': 9, '4.read': 9, '5.read': 9, '6.read': 9
         }
     })));
     await page.goto('/');
-    await page.locator('#set').click();
-    await page.locator('[data-level]').nth(1).click();
-    for (const b of await page.locator('button').all()) {
-        const box = await b.boundingBox();
-        expect(box!.height).toBeGreaterThanOrEqual(44);
-        expect(box!.width).toBeGreaterThanOrEqual(44);
+    for (let level = 1; level <= 7; level++) {
+        await page.locator('#set').click();
+        await expect(page.locator('[data-level]')).toHaveCount(8);
+        await expect(page.locator(`[data-level="${level}"]`)).toHaveCount(1);
+        await page.locator(`[data-level="${level}"]`).click();
+        expect((await state(page)).level).toBe(level);
+        await expect(page.locator('main')).toHaveAttribute('data-current-level', String(level));
+        for (const b of await page.locator('button').all()) {
+            const box = await b.boundingBox();
+            expect(box!.height).toBeGreaterThanOrEqual(44);
+            expect(box!.width).toBeGreaterThanOrEqual(44);
+        }
+        const widths = await page.locator('#clock .hit').evaluateAll(lines => lines.map(line => {
+            const svg = (line as SVGLineElement).ownerSVGElement!;
+            const style = getComputedStyle(line);
+            return parseFloat(style.strokeWidth) * (style.vectorEffect === 'non-scaling-stroke'
+                ? 1 : svg.getBoundingClientRect().width / svg.viewBox.baseVal.width);
+        }));
+        expect(widths).toHaveLength(2);
+        for (const width of widths) expect(width).toBeGreaterThanOrEqual(44);
+        const dial = await page.locator('#clock').boundingBox();
+        expect(dial!.width).toBeGreaterThanOrEqual(280);
+        await page.locator('#back').click();
     }
-    const widths = await page.locator('#clock .hit').evaluateAll(lines => lines.map(line => {
-        const svg = (line as SVGLineElement).ownerSVGElement!;
-        return parseFloat(getComputedStyle(line).strokeWidth) * svg.getBoundingClientRect().width / svg.viewBox.baseVal.width;
-    }));
-    for (const width of widths) expect(width).toBeGreaterThanOrEqual(44);
-    const dial = await page.locator('#clock').boundingBox();
-    expect(dial!.width).toBeGreaterThanOrEqual(280);
+    await page.locator('[data-level="2"]').click();
     await page.locator('#minute').focus();
     await page.keyboard.press('ArrowRight');
     expect((await state(page)).displayed.m).toBe(30);
@@ -218,5 +231,58 @@ test('day cue is confined to lessons six and eight', async ({
         await page.locator(`[data-level="${level}"]`).click();
         await expect(page.locator('.period')).toHaveCount(level === 6 || level === 8 ? 1 : 0);
         await page.locator('#back').click();
+    }
+});
+
+test('level seven reads and speaks the starting time without revealing the target', async ({ page }) => {
+    await page.addInitScript(() => {
+        localStorage.setItem('tictac.v1', JSON.stringify({
+            version: 1, locale: 'fr', guide: 'panda', records: {
+                '1.read': 9, '2.read': 9, '3.read': 9, '4.read': 9, '5.read': 9, '6.read': 9
+            }
+        }));
+        // Keep the speech boundary deterministic on machines without installed voices.
+        Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: class {
+            text: string;
+            lang = '';
+            voice: unknown = null;
+            constructor(text: string) { this.text = text; }
+        } });
+        const phrases: string[] = [];
+        Object.defineProperty(window, '__spoken', { value: phrases });
+        Object.defineProperty(window.speechSynthesis, 'getVoices', {
+            value: () => [{ localService: true, lang: 'fr-FR' }]
+        });
+        Object.defineProperty(window.speechSynthesis, 'speak', {
+            value: (utterance: SpeechSynthesisUtterance) => phrases.push(utterance.text)
+        });
+    });
+    await page.goto('/');
+    await page.locator('[data-level="7"]').click();
+    for (let index = 0; index < 10; index++) {
+        const current = await state(page);
+        const question = current.question!;
+        expect(current.displayed).toEqual(question.start);
+        // Check the rendered endpoints as well as the state exposed by the hook.
+        for (const [hand, angle, radius] of [
+            ['hour', hourAngle(question.start), 83], ['minute', minuteAngle(question.start), 126]
+        ] as const) {
+            const line = page.locator(`#${hand} .needle`);
+            expect(Number(await line.getAttribute('x2'))).toBeCloseTo(160 + Math.sin(angle * Math.PI / 180) * radius, 6);
+            expect(Number(await line.getAttribute('y2'))).toBeCloseTo(160 - Math.cos(angle * Math.PI / 180) * radius, 6);
+        }
+        await expect(page.locator('#digital')).toHaveText('--:--');
+        await page.locator('#listen').click();
+        const phrases = await page.evaluate(() => (window as unknown as { __spoken: string[] }).__spoken);
+        expect(phrases).toHaveLength(index + 1);
+        const phrase = phrases[index]!;
+        expect(phrase).toContain(`Dans ${question.delta} minutes`);
+        expect(phrase).toContain(`Départ : ${say(question.start, 'fr')}`);
+        const startWords = say(question.start, 'fr');
+        expect(phrase).toBe(`Dans ${question.delta} minutes, il sera… Départ : ${startWords}.`);
+        // E.g. 'quatre heures' is already part of the valid start 'quatre heures moins le quart'.
+        expect(phrase.replace(startWords, '')).not.toContain(say(question.target, 'fr'));
+        await page.locator('[data-answer]').nth(question.answer).click();
+        if (index < 9) await page.locator('#continue').click();
     }
 });

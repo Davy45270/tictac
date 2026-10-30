@@ -50,6 +50,7 @@ export function wireClock(svg: SVGSVGElement, initial: Time, step: Step, locale:
     let time = initial;
     let activeHand: 'hour' | 'minute' | undefined;
     let activePointerId: number | undefined;
+    let previousRawAngle = 0;
     const update = (next: Time): void => {
         time = next;
         for (const [id, angle, radius] of [['hour', hourAngle(time), 83], ['minute', minuteAngle(time), 126]] as const) {
@@ -73,10 +74,12 @@ export function wireClock(svg: SVGSVGElement, initial: Time, step: Step, locale:
         const [x, y] = coordinates(event);
         const hourDistance = distanceToHand(x, y, hourAngle(time), 83);
         const minuteDistance = step === 60 ? Infinity : distanceToHand(x, y, minuteAngle(time), 126);
-        if (Math.min(hourDistance, minuteDistance) > 25) return;
+        const hitRadius = 24 * 320 / svg.getBoundingClientRect().width;
+        if (Math.min(hourDistance, minuteDistance) > hitRadius) return;
         // The first finger owns the entire gesture, including capture outside the dial.
         activePointerId = event.pointerId;
         activeHand = hourDistance <= minuteDistance + 1e-6 ? 'hour' : 'minute';
+        previousRawAngle = angleFromPoint(160, 160, x, y);
         svg.setPointerCapture(event.pointerId);
         event.preventDefault();
     });
@@ -86,7 +89,8 @@ export function wireClock(svg: SVGSVGElement, initial: Time, step: Step, locale:
         const [x, y] = coordinates(event);
         if (Math.hypot(x - 160, y - 160) < 12) return;
         const angle = angleFromPoint(160, 160, x, y);
-        update(activeHand === 'hour' ? dragHour(time, angle) : dragMinute(time, angle, step));
+        update(activeHand === 'hour' ? dragHour(time, angle) : dragMinute(time, angle, step, previousRawAngle));
+        previousRawAngle = angle;
     });
     const end = (event: PointerEvent): void => {
         if (event.pointerId !== activePointerId) return;

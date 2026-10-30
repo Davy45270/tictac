@@ -85,7 +85,7 @@ it('addition sessions exercise both delta families across seeds', () => {
     expect([...deltas].sort((a, b) => a - b)).toEqual([5, 10, 15, 20, 25, 30, 45, 60]);
 });
 
-it('plausible distractors include an adjacent hour or swapped hands when legal', () => {
+it('prioritizes an adjacent step as well as an adjacent hour or legal swapped hands', () => {
     for (let level = 1; level <= 7; level++) {
         for (let seed = 0; seed < 20; seed++) {
             for (const question of generateSession(level, 'read', seed)) {
@@ -95,6 +95,10 @@ it('plausible distractors include an adjacent hour or swapped hands when legal',
                     h: target.m / 5, m: target.h % 12 * 5
                 });
                 expect(question.choices.some((choice, index) => index !== question.answer && plausible.some(time => sameOnDial(time, choice)))).toBe(true);
+                const step = levelInfo(level).step;
+                const adjacent = [addMinutes(target, step), addMinutes(target, -step)]
+                    .filter(time => !sameOnDial(time, target) && time.m % step === 0);
+                if (adjacent.length) expect(question.choices.some((choice, index) => index !== question.answer && adjacent.some(time => sameOnDial(time, choice)))).toBe(true);
             }
         }
     }

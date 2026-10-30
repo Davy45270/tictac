@@ -136,7 +136,8 @@ nav {
 }
 .hit {
     stroke: transparent;
-    stroke-width: 48;
+    stroke-width: 48px;
+    vector-effect: non-scaling-stroke;
     stroke-linecap: round;
     fill: none;
 }
@@ -318,31 +319,31 @@ small {
     }
 }
 @media(max-width:430px) {
-    main[data-level="6"][data-kind="set"][data-screen="exercise"] {
+    main[data-current-level="6"][data-current-kind="set"][data-screen="exercise"] {
         padding: 8px;
     }
-    main[data-level="6"][data-kind="set"] .clock-wrap {
+    main[data-current-level="6"][data-current-kind="set"] .clock-wrap {
         max-width: 280px;
         position: relative;
     }
-    main[data-level="6"][data-kind="set"] .period {
+    main[data-current-level="6"][data-current-kind="set"] .period {
         position: absolute;
         top: 0;
         right: -24px;
         background: #fffaf0;
         border-radius: 12px;
     }
-    main[data-level="6"][data-kind="set"] .instruction {
+    main[data-current-level="6"][data-current-kind="set"] .instruction {
         font-size: 1.2rem;
         margin: 8px 0;
         line-height: 1.2;
     }
-    main[data-level="6"][data-kind="set"] #target {
+    main[data-current-level="6"][data-current-kind="set"] #target {
         font-size: 1rem;
         margin: 4px 0;
         line-height: 1.2;
     }
-    main[data-level="6"][data-kind="set"] .dots {
+    main[data-current-level="6"][data-current-kind="set"] .dots {
         margin: 4px 0;
     }
 }

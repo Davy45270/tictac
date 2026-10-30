@@ -121,8 +121,8 @@ function updateGuide(): void {
 
 function render(): void {
     document.documentElement.lang = save.locale;
-    root.dataset.level = String(level);
-    root.dataset.kind = kind;
+    root.dataset.currentLevel = String(level);
+    root.dataset.currentKind = kind;
     root.dataset.screen = screen;
     if (screen === 'home') {
         const cast = ids.map(id => `

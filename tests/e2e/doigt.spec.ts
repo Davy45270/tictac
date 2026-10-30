@@ -74,6 +74,13 @@ test('a second finger cannot redirect or release the first hand drag', async ({
     await page.locator('[data-level="4"]').click();
     const cdp = await context.newCDPSession(page);
     const dial = (await state(page)).dial!;
+    await page.evaluate(() => {
+        const probe = { ids: [] as number[], released: [] as number[] };
+        Object.defineProperty(window, '__pointerProbe', { value: probe });
+        const svg = document.querySelector('#clock')!;
+        svg.addEventListener('pointerdown', event => probe.ids.push((event as PointerEvent).pointerId));
+        svg.addEventListener('pointerup', event => probe.released.push((event as PointerEvent).pointerId));
+    });
     const finger = (id: number, angle: number) => ({
         id, x: dial.cx + Math.sin(angle * Math.PI / 180) * dial.minuteRadius * 0.92, y: dial.cy - Math.cos(angle * Math.PI / 180) * dial.minuteRadius * 0.92
     });
@@ -83,7 +90,7 @@ test('a second finger cannot redirect or release the first hand drag', async ({
     await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchMove', touchPoints: [finger(1, 30)]
     });
-    expect((await state(page)).displayed.m).toBe(5);
+    await expect.poll(async () => (await state(page)).displayed.m).toBe(5);
     // The second finger lands on the same shaft and then moves elsewhere.
     await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchStart', touchPoints: [finger(1, 30), {
@@ -93,15 +100,20 @@ test('a second finger cannot redirect or release the first hand drag', async ({
     await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchMove', touchPoints: [finger(1, 30), finger(2, 180)]
     });
-    expect((await state(page)).displayed.m).toBe(5);
-    // CDP releases the removed contact while keeping the first contact active.
+    await expect.poll(async () => (await state(page)).displayed.m).toBe(5);
+    // CDP keeps omitted contacts active on touchMove. End the second contact explicitly.
+    // In Chromium's WebTouch path a nonempty touchEnd lists the contacts being released.
     await cdp.send('Input.dispatchTouchEvent', {
-        type: 'touchMove', touchPoints: [finger(1, 30)]
+        type: 'touchEnd', touchPoints: [finger(2, 180)]
     });
+    await expect.poll(() => page.evaluate(() => {
+        const probe = (window as unknown as { __pointerProbe: { ids: number[]; released: number[] } }).__pointerProbe;
+        return probe.released.length === 1 && probe.released[0] === probe.ids[1];
+    })).toBe(true);
     await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchMove', touchPoints: [finger(1, 60)]
     });
-    expect((await state(page)).displayed.m).toBe(10);
+    await expect.poll(async () => (await state(page)).displayed.m).toBe(10);
     await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchEnd', touchPoints: []
     });
@@ -118,8 +130,88 @@ test('a second finger cannot redirect or release the first hand drag', async ({
     await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchMove', touchPoints: [finger(4, 90)]
     });
-    expect((await state(page)).displayed.m).toBe(15);
+    await expect.poll(async () => (await state(page)).displayed.m).toBe(15);
     await cdp.send('Input.dispatchTouchEvent', {
         type: 'touchEnd', touchPoints: []
     });
+});
+
+test('grips both hands near the centre and retains the minute hand through the central zone', async ({ page, context }) => {
+    await page.addInitScript(() => localStorage.setItem('tictac.v1', JSON.stringify({
+        version: 1, locale: 'fr', guide: 'panda', records: { '1.read': 9, '2.read': 9, '3.read': 9 }
+    })));
+    await page.goto('/');
+    await page.locator('#set').click();
+    await page.locator('[data-level="4"]').click();
+    await page.locator('#hour').focus();
+    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight');
+    const dial = (await state(page)).dial!;
+    const cdp = await context.newCDPSession(page);
+    const touch = async (type: 'touchStart' | 'touchMove' | 'touchEnd', angle: number, radius: number) => {
+        await cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{
+            id: 1, x: dial.cx + Math.sin(angle * Math.PI / 180) * radius,
+            y: dial.cy - Math.cos(angle * Math.PI / 180) * radius
+        }] });
+    };
+    const minuteGrip = dial.minuteRadius * .35;
+    await touch('touchStart', 0, minuteGrip);
+    await touch('touchMove', 30, minuteGrip);
+    await expect.poll(async () => (await state(page)).displayed).toEqual({ h: 3, m: 5 });
+    // Move along a chord through the ignored centre, then out on the other side.
+    await touch('touchMove', 30, 5);
+    await touch('touchMove', 0, 0);
+    await touch('touchMove', 210, 5);
+    await expect.poll(async () => (await state(page)).displayed).toEqual({ h: 3, m: 5 });
+    await touch('touchMove', 210, minuteGrip);
+    await expect.poll(async () => (await state(page)).displayed).toEqual({ h: 3, m: 35 });
+    await touch('touchEnd', 0, 0);
+    const beforeHour = (await state(page)).displayed;
+    const hourGrip = dial.hourRadius * .35;
+    await touch('touchStart', hourAngle(beforeHour), hourGrip);
+    await touch('touchMove', 180 + beforeHour.m / 2, hourGrip);
+    await touch('touchEnd', 0, 0);
+    expect((await state(page)).displayed).toEqual({ h: 6, m: 35 });
+});
+
+test('lostpointercapture alone releases the hand and permits a fresh gesture', async ({ page, context }) => {
+    await page.addInitScript(() => localStorage.setItem('tictac.v1', JSON.stringify({
+        version: 1, locale: 'fr', guide: 'panda', records: { '1.read': 9, '2.read': 9, '3.read': 9 }
+    })));
+    await page.goto('/');
+    await page.locator('#set').click();
+    await page.locator('[data-level="4"]').click();
+    await page.evaluate(() => {
+        const probe = { id: -1, lost: 0, ended: 0 };
+        Object.defineProperty(window, '__captureProbe', { value: probe });
+        const svg = document.querySelector('#clock')!;
+        svg.addEventListener('pointerdown', event => { probe.id = (event as PointerEvent).pointerId; });
+        svg.addEventListener('lostpointercapture', () => { probe.lost++; });
+        for (const name of ['pointerup', 'pointercancel']) svg.addEventListener(name, () => { probe.ended++; });
+    });
+    const dial = (await state(page)).dial!;
+    const cdp = await context.newCDPSession(page);
+    const touch = async (type: 'touchStart' | 'touchMove' | 'touchEnd', angle = 0) => {
+        await cdp.send('Input.dispatchTouchEvent', { type, touchPoints: type === 'touchEnd' ? [] : [{
+            id: 1, x: dial.cx + Math.sin(angle * Math.PI / 180) * dial.minuteRadius * .92,
+            y: dial.cy - Math.cos(angle * Math.PI / 180) * dial.minuteRadius * .92
+        }] });
+    };
+    await touch('touchStart');
+    await touch('touchMove', 30);
+    await expect.poll(async () => (await state(page)).displayed.m).toBe(5);
+    await page.evaluate(() => {
+        const probe = (window as unknown as { __captureProbe: { id: number } }).__captureProbe;
+        document.querySelector('#clock')!.releasePointerCapture(probe.id);
+    });
+    await touch('touchMove', 60);
+    await expect.poll(() => page.evaluate(() => {
+        const probe = (window as unknown as { __captureProbe: { lost: number; ended: number } }).__captureProbe;
+        return { lost: probe.lost, ended: probe.ended };
+    })).toEqual({ lost: 1, ended: 0 });
+    await expect.poll(async () => (await state(page)).displayed.m).toBe(5);
+    await touch('touchEnd');
+    await touch('touchStart', 30);
+    await touch('touchMove', 90);
+    await expect.poll(async () => (await state(page)).displayed.m).toBe(15);
+    await touch('touchEnd');
 });

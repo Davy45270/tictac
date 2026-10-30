@@ -16,13 +16,14 @@ export function angleFromPoint(cx: number, cy: number, x: number, y: number): nu
 // Snap to the nearest legal minute; ties turn clockwise and 60 wraps to zero.
 export const snapMinute = (angle: number, step: Step): number => mod(Math.round(mod(angle, 360) / 6 / step) * step, 60);
 
-export function dragMinute(time: Time, angle: number, step: Step): Time {
-    const minute = snapMinute(angle, step);
-    const movement = mod(angle - minuteAngle(time) + 180, 360) - 180;
-    // Only crossing twelve changes the hour, including midnight in either direction.
-    const shift = time.m >= 30 && minute < 30 && movement > 0 ? 1
-        : time.m < 30 && minute >= 30 && movement < 0 ? -1 : 0;
-    return { h: mod(time.h + shift, 24), m: minute };
+// Callers retain the last raw finger angle throughout a gesture, independently of snapping.
+export function dragMinute(time: Time, angle: number, step: Step, previousAngle = minuteAngle(time)): Time {
+    const raw = mod(angle, 360);
+    const previous = mod(previousAngle, 360);
+    // Consecutive raw samples crossing between the last and first quadrants pass twelve.
+    const shift = previous >= 270 && raw < 90 ? 1
+        : previous < 90 && raw >= 270 ? -1 : 0;
+    return { h: mod(time.h + shift, 24), m: snapMinute(raw, step) };
 }
 
 export function dragHour(time: Time, angle: number): Time {

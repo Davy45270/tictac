@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { makeRng } from '../src/engine/session';
 import { minuteAngle, hourAngle, angleFromPoint, snapMinute, dragMinute, dragHour, addMinutes, sameOnDial, sameTime, type Step } from '../src/engine/time';
 
 describe('clock geometry', () => {
@@ -69,7 +70,7 @@ describe('clock geometry', () => {
             h: 3, m: 30
         });
     });
-    it('half-hour snapping distinguishes the approach side', () => {
+    it('half-hour snapping does not count a turn before the raw finger crosses twelve', () => {
         expect(dragMinute({
             h: 3, m: 0
         },
@@ -80,14 +81,12 @@ describe('clock geometry', () => {
             h: 3, m: 30
         },
         271, 30)).toEqual({
-            h: 4, m: 0
-        });
-        expect(dragMinute({
             h: 3, m: 0
-        },
-        269, 30)).toEqual({
-            h: 2, m: 30
         });
+        const reverse = dragMinute({ h: 3, m: 0 }, 330, 30, 0);
+        expect(reverse).toEqual({ h: 2, m: 0 });
+        expect(dragMinute(reverse, 269, 30, 330)).toEqual({ h: 2, m: 30 });
+        expect(dragMinute({ h: 3, m: 0 }, 0, 30, 271)).toEqual({ h: 4, m: 0 });
         expect(dragMinute({
             h: 3, m: 30
         },
@@ -99,10 +98,37 @@ describe('clock geometry', () => {
         let t = {
             h: 23, m: 0
         };
-        for (let a = 3; a <= 360; a += 3) t = dragMinute(t, a + (a % 2?.4: -.4), 1);
+        let previous = 0;
+        for (let a = 3; a <= 360; a += 3) {
+            const raw = a === 360 ? 360 : a + (a % 2 ? .4 : -.4);
+            t = dragMinute(t, raw, 1, previous);
+            previous = raw;
+        }
         expect(t).toEqual({
             h: 0, m: 0
         });
+    });
+    it('retains the hour for raw angles 89 then 181 at step 30', () => {
+        const first = dragMinute({ h: 3, m: 0 }, 89, 30, 0);
+        expect(first).toEqual({ h: 3, m: 0 });
+        expect(dragMinute(first, 181, 30, 89)).toEqual({ h: 3, m: 30 });
+    });
+    it('counts raw turns independently of snapping on seeded random walks', () => {
+        for (const step of [60, 30, 15, 5, 1] as Step[]) {
+            const rng = makeRng(572);
+            let cumulative = 0;
+            let previous = 0;
+            let time = { h: 3, m: 0 };
+            for (let sample = 0; sample < 2000; sample++) {
+                cumulative += (rng() * 2 - 1) * 89;
+                const raw = ((cumulative % 360) + 360) % 360;
+                time = dragMinute(time, raw, step, previous);
+                const hours = 3 + Math.floor(cumulative / 360);
+                expect(time.h).toBe(((hours % 24) + 24) % 24);
+                expect(time.m).toBe(snapMinute(raw, step));
+                previous = raw;
+            }
+        }
     });
     it('hour dragging accounts for minutes and retains half-day', () => {
         expect(dragHour({

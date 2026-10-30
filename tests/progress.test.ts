@@ -58,3 +58,16 @@ it('tolerates absent, malformed and throwing storage', () => {
     writeSave(memory, save);
     expect(readSave(memory)).toEqual(save);
 });
+
+for (const score of [1.5, -1, 11, '9', null, true, {}, []]) it(`ignores invalid score ${JSON.stringify(score)} in an otherwise valid save`, () => {
+    const save = readSave({
+        getItem: () => JSON.stringify({ version: 1, locale: 'en', guide: 'licorne', records: {
+            '1.read': 9, '2.set': score, '3.read': 0, '4.set': 10
+        } }),
+        setItem: () => {}
+    });
+    expect(save.locale).toBe('en');
+    expect(save.guide).toBe('licorne');
+    expect(save.records).toEqual({ '1.read': 9, '3.read': 0, '4.set': 10 });
+    expect(unlocked(save.records, 3)).toBe(false);
+});
