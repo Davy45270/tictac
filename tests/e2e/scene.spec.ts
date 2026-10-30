@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, state } from './helpers';
 import { characters, ids } from '../../src/characters/model';
+import { contrastRatio } from '../../src/ui/contrast';
 import { hourAngle, minuteAngle } from '../../src/engine/time';
 
 test.use({ timezoneId: 'UTC' });
@@ -87,6 +88,8 @@ test('setting crosses noon by keyboard and rotates both visible hand shapes', as
     await page.locator('#hour').press('ArrowRight');
     expect((await state(page)).displayed).toEqual({ h: 12, m: 5 });
     await expectScene(page, 'day');
+    await expect(page.locator('#hour .hand-shadow')).toHaveAttribute('transform', `translate(3 3) rotate(${hourAngle((await state(page)).displayed)} 160 160)`);
+    await expect(page.locator('#minute .hand-shadow')).toHaveAttribute('transform', `translate(3 3) rotate(${minuteAngle((await state(page)).displayed)} 160 160)`);
     await expect(hourShape).toHaveAttribute('transform', `rotate(${hourAngle((await state(page)).displayed)} 160 160)`);
 });
 
@@ -140,8 +143,104 @@ for (const level of [1, 6, 8]) for (const mode of ['read', 'set']) {
         expect(bounds).not.toBeNull();
         expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(844);
         const guide = await page.locator('.guide > svg').boundingBox();
-        expect(guide!.height).toBeGreaterThanOrEqual(110);
+        expect(guide!.height).toBeGreaterThanOrEqual(118);
         expect(await page.evaluate(() => window.scrollY)).toBe(0);
         expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(844);
     });
 }
+
+for (const hour of [3, 9, 14, 19]) test(`computed artwork and contrast at ${hour}h`, async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await fixTime(page, hour);
+    await page.goto('/');
+    const checkOrb = async (selector: string): Promise<void> => {
+        const orb = (await page.locator('.scene-orb').boundingBox())!;
+        expect(orb.width).toBe(64);
+        expect(orb.height).toBe(64);
+        expect(orb.x).toBeGreaterThanOrEqual(0);
+        expect(orb.y).toBeGreaterThanOrEqual(0);
+        expect(orb.x + orb.width).toBeLessThanOrEqual(390);
+        expect(orb.y + orb.height).toBeLessThanOrEqual(844);
+        const text = (await page.locator(selector).boundingBox())!;
+        expect(orb.x + orb.width <= text.x || text.x + text.width <= orb.x ||
+            orb.y + orb.height <= text.y || text.y + text.height <= orb.y).toBe(true);
+    };
+    await checkOrb('header h1');
+    if (hour === 3) {
+        const header = (await page.locator('header').boundingBox())!;
+        for (const star of await page.locator('.sky-star').all()) {
+            const box = (await star.boundingBox())!;
+            expect(box.y).toBeGreaterThanOrEqual(header.y + header.height);
+        }
+    }
+    await page.locator('[data-level="1"]').click();
+    await checkOrb('#back');
+    const styles = await page.locator('.prompt, .level-label, .answers button, .guide p, .dots span').evaluateAll(elements => elements.map(element => {
+        const style = getComputedStyle(element);
+        const hex = (color: string): string => {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d')!;
+            context.fillStyle = color;
+            return context.fillStyle;
+        };
+        // Glass uses the opaque scene fallback; gradients use their button base.
+        const glass = style.backdropFilter !== 'none';
+        const fallback = style.getPropertyValue(element.matches('button') ? '--button-base' : '--scene-panel').trim();
+        return { ink: hex(style.color), background: hex(glass || style.backgroundImage !== 'none' ? fallback : style.backgroundColor) };
+    }));
+    for (const style of styles) expect(contrastRatio(style.ink, style.background)).toBeGreaterThanOrEqual(4.5);
+    await expect(page.locator('.level-label')).toHaveCSS('font-weight', '700');
+    await expect(page.locator('.level-label')).toHaveCSS('text-shadow', 'none');
+    for (const needle of await page.locator('.needle').all()) await expect(needle).toHaveCSS('stroke-opacity', '0');
+    const tail = await page.locator('.guide p').evaluate(element => {
+        const style = getComputedStyle(element, '::before');
+        return { content: style.content, width: parseFloat(style.width), height: parseFloat(style.height), transform: style.transform };
+    });
+    expect(tail.content).toBe('""');
+    expect(tail.width).toBeGreaterThan(0);
+    expect(tail.height).toBeGreaterThan(0);
+    expect(tail.transform).not.toBe('none');
+});
+
+for (const mode of ['read', 'set']) for (const reduce of [false, true]) test(`${mode} success anchors sparkles and respects reduced motion ${reduce}`, async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: reduce ? 'reduce' : 'no-preference' });
+    await page.clock.install({ time: new Date('2026-01-01T14:00:00Z') });
+    await page.goto('/');
+    await page.clock.pauseAt(new Date('2026-01-01T14:01:00Z'));
+    await page.locator(`#${mode}`).click();
+    await page.locator('[data-level="1"]').click();
+    for (let index = 0; index < 10; index++) {
+        const current = await state(page);
+        if (mode === 'set') {
+            for (let h = 0; h < current.question!.target.h % 12; h++) await page.locator('#hour').press('ArrowRight');
+            await page.locator('#check').click();
+        } else await page.locator('[data-answer]').nth(current.question!.answer).click();
+        await expect(page.locator('.guide')).toHaveAttribute('data-expression', 'joie');
+        if (index === 9) break;
+        if (reduce) {
+            await expect(page.locator('.answer-sparkles')).toHaveCount(0);
+            await expectStill(page);
+        } else {
+            const sparkle = page.locator('.answer-sparkles');
+            await expect(sparkle).toHaveCount(1);
+            expect(await sparkle.evaluate(element => element.parentElement?.matches('.clock-wrap, .answers .correct'))).toBe(true);
+            const target = page.locator(mode === 'set' ? '#clock' : '.answers .correct');
+            const bounds = await target.boundingBox();
+            const dimensions = await sparkle.evaluate(element => ({ width: parseFloat((element as HTMLElement).style.width), height: parseFloat((element as HTMLElement).style.height) }));
+            expect(dimensions.width).toBeCloseTo(bounds!.width, 0);
+            expect(dimensions.height).toBeCloseTo(bounds!.height, 0);
+            await expect(page.locator('.guide animateTransform')).toHaveAttribute('values', '0 0;0 -12;0 0');
+            await page.clock.fastForward(150);
+            await expect(sparkle).toHaveCount(1);
+        }
+        if (index === 0) {
+            await page.clock.fastForward(850);
+            await expect(page.locator('.answer-sparkles')).toHaveCount(0);
+        }
+        await page.locator('#continue').click();
+        await expect(page.locator('.answer-sparkles')).toHaveCount(0);
+    }
+    await expect(page.locator('main')).toHaveAttribute('data-screen', 'result');
+    await page.clock.fastForward(1000);
+    await expect(page.locator('body .answer-sparkles')).toHaveCount(0);
+});

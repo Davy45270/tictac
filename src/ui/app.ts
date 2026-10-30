@@ -53,7 +53,7 @@ function updateScene(): void {
     }
 }
 function guide(): string {
-    return `<aside class="guide">
+    return `<aside class="guide" data-expression="${expression}">
         ${characterSvg(save.guide, expression, screen === 'result' ? 'celebration' : expression === 'joie' ? 'saut' : 'repos', motion())}
         <p id="guide-message" role="status" aria-live="polite">${feedback || tr('Prends ton temps, on cherche ensemble !', 'Take your time, let’s work together!')}</p>
     </aside>`;
@@ -116,7 +116,7 @@ function submit(correct: boolean): void {
         digital.textContent = formatDigital(solved.target, level === 6 || level === 8 ? '24' : '12');
         digital.removeAttribute('aria-label');
     }
-    sparkleAnswer(root.querySelector('.answers .correct, #check'));
+    sparkleAnswer(root.querySelector(kind === 'set' ? '#clock' : '.answers .correct'));
     expression = 'joie';
     feedback = tr('Bravo, tu as trouvé !', 'Well done, you found it!');
     if (attempt.index === session.length) {
@@ -143,12 +143,14 @@ function submit(correct: boolean): void {
 
 function sparkleAnswer(control: Element | null): void {
     if (!control || motionPreference.matches) return;
+    const anchor = control.id === 'clock' ? control.parentElement! : control;
     const bounds = control.getBoundingClientRect();
+    const origin = anchor.getBoundingClientRect();
     const sparkle = document.createElement('div');
     sparkle.className = 'answer-sparkles';
-    sparkle.style.cssText = `left:${bounds.left}px;top:${bounds.top}px;width:${bounds.width}px;height:${bounds.height}px`;
+    sparkle.style.cssText = `left:${bounds.left - origin.left}px;top:${bounds.top - origin.top}px;width:${bounds.width}px;height:${bounds.height}px`;
     sparkle.innerHTML = `<svg viewBox="0 0 180 64" preserveAspectRatio="none" aria-hidden="true">${[[8, 12], [45, 3], [140, 5], [174, 25], [156, 59], [24, 58]].map(([x, y]) => `<path d="M${x} ${y! - 7}l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z"/>`).join('')}</svg>`;
-    document.body.append(sparkle);
+    anchor.append(sparkle);
     window.setTimeout(() => sparkle.remove(), 600);
 }
 
