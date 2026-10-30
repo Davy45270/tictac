@@ -347,7 +347,8 @@ header h1 {
     paint-order: stroke fill;
     text-shadow: 0 3px 0 #fff0bd, 0 6px 0 #a6592b, 0 9px 10px #8b4b3640;
     transform: rotate(-3deg);
-    margin: 12px 0 24px;
+    width: fit-content;
+    margin: 12px auto 24px;
 }
 header p { color: #45516a; font-weight: 700; }
 h2 { color: #704427; }
@@ -546,7 +547,7 @@ body[data-scene="night"] .levels button:disabled .level-number { color: #263547;
 /* Corner artwork has its own viewport, independent of landscape cropping. */
 .scene-orb { position: absolute; top: 4px; right: 6px; width: 64px; height: 64px; }
 header { padding-top: 54px; }
-nav { padding-right: 66px; }
+nav { padding-right: 78px; }
 nav .level-label {
     flex: 0 1 auto;
     padding: 5px 9px;
