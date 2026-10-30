@@ -33,65 +33,93 @@ export function characterSvg(id: CharacterId, expression: Expression = 'joie', a
     if (monkey) rear += path('M158 182 C227 213 232 144 208 142 C187 141 190 164 205 160', 'none', 10, '#885334');
     if (dragon) {
         rear += path('M151 183 Q212 207 217 160 Q203 174 179 155Z', coat);
-        for (const flip of [false, true]) rear += `<g${flip ? ' transform="translate(240 0) scale(-1 1)"' : ''}>${path('M78 159 Q33 144 28 102 Q53 104 78 128 L92 156Z', url('wing'))}${path('M30 104 L62 130 L44 139 M62 130 L76 154', 'none', 2.3)}</g>`;
+        for (const flip of [false, true]) rear += `<g${flip ? ' transform="translate(240 0) scale(-1 1)"' : ''}>${path('M78 159 Q39 160 15 110 L34 116 28 85 Q64 94 78 128 L92 156Z', url('wing'))}${path('M30 104 L62 130 L44 139 M62 130 L76 154', 'none', 2.3)}</g>`;
     }
     if (unicorn) for (let i = 5; i >= 0; i--) rear += path(`M166 ${157+i*3} C225 137 191 203 216 ${201+i*2} Q189 221 182 184`, rainbow[i]!, 2);
-    let body = ellipse(120, 166, 46, 43, coat) + ellipse(116, 168, 29, 33, cream, 0);
-    for (const x of [87, 151]) {
-        body += ellipse(x, 205, 23, 14, panda || red ? dark : monkey ? pink : coat);
+    let body = panda
+        ? ellipse(120, 171, 57, 46, dark, 4.5) + path('M80 151 Q120 135 160 151 Q180 187 155 205 L147 208 140 204 133 210 Q94 216 81 197 Q72 177 80 151Z', coat, 2)
+        : monkey
+            ? path('M101 133 Q120 126 139 135 L148 177 Q120 191 94 175Z', coat, 3.8) + path('M105 139 L136 139 140 174 Q120 182 101 172Z', pink, 1.5)
+            : unicorn
+                ? path('M104 131 Q132 127 153 149 Q184 143 186 170 L177 194 172 215 155 215 153 184 119 185 108 211 90 211 98 178 Q83 153 104 131Z', coat, 4)
+                : ellipse(120, 168, dragon ? 45 : 39, dragon ? 44 : 38, coat, 4) + ellipse(116, 168, 28, 33, cream, 0);
+    if (dragon) for (const y of [150, 162, 174, 186]) body += path(`M94 ${y} Q119 ${y+10} 143 ${y}`, 'none', 1.8, '#c59760');
+    for (const x of unicorn ? [98, 165] : monkey ? [107, 139] : [87, 151]) {
+        body += ellipse(x, monkey ? 215 : 205, monkey ? 13 : unicorn ? 12 : 23, monkey ? 9 : 14, panda || red ? dark : monkey ? pink : unicorn ? '#c5a8d1' : coat);
         body += ellipse(x-5, 201, 9, 4, '#ffffff', 0).replace('fill="#ffffff"', 'fill="#ffffff" opacity="0.35"');
         if (monkey) body += path(`M${x-10} 201 l19 6 m-17 -1 17 -7`, 'none', 1.6, '#fff0df');
     }
     if (monkey) {
-        body += path('M78 170 Q120 186 163 170 L178 190 Q169 201 155 194 Q141 207 126 198 Q110 208 96 198 Q78 203 65 191Z', pink);
+        body += path('M106 184 L108 211 M138 184 L139 211', 'none', 11, '#a36a49');
+        body += path('M78 170 Q120 186 163 170 L185 190 Q169 201 155 194 Q141 207 126 198 Q110 208 96 198 Q78 203 57 191Z', pink);
         for (const x of [82, 100, 120, 140, 158]) body += path(`M${x} 180 l${x<120 ? -5 : 5} 13`, 'none', 2, '#fff0ed');
         body += path('M82 171 Q120 183 160 171', 'none', 4, '#a74275');
     }
-    for (const x of [75, 167]) body += ellipse(x, 155, 16, 27, panda || red ? dark : coat);
+    if (monkey) body += path('M102 156 Q74 163 55 150 M139 156 Q167 159 184 149', 'none', 12, '#a36a49') + ellipse(53, 149, 10, 8, cream, 2) + ellipse(186, 149, 10, 8, cream, 2);
+    else if (!unicorn) for (const x of [75, 167]) body += ellipse(x, 155, 16, 27, panda || red ? dark : coat);
     let head = '';
-    if (panda || monkey) for (const x of [68, 171]) head += ellipse(x, 59, monkey ? 24 : 21, monkey ? 27 : 22, monkey ? coat : dark) + ellipse(x-1, 59, 12, 14, monkey ? cream : '#9c7370', 0);
-    else for (const x of [72, 169]) head += path(`M${x-18} 70 Q${x-25} 40 ${x-12} 28 Q${x+8} 34 ${x+18} 63Z`, coat) + path(`M${x-11} 59 L${x-11} 40 ${x+9} 60Z`, pink, 0);
+    if (panda || monkey) for (const x of monkey ? [57, 183] : [70, 170]) head += ellipse(x, 59, monkey ? 26 : 18, monkey ? 29 : 19, monkey ? coat : dark) + ellipse(x-1, 59, 12, 14, monkey ? cream : '#9c7370', 0);
+    else if (!dragon) for (const x of unicorn ? [83, 150] : [72, 169]) head += path(`M${x-18} 70 Q${x-25} 40 ${x-12} 28 Q${x+8} 34 ${x+18} 63Z`, red ? cream : coat) + path(`M${x-11} 59 L${x-11} 40 ${x+9} 60Z`, pink, 0);
     if (dragon) for (const x of [77, 163]) {
         head += path(`M${x-9} 53 Q${x-28} 30 ${x-12} 12 Q${x-12} 31 ${x+12} 44Z`, gold);
         head += path(`M${x-14} 32 l12 -3 m-9 12 13 -4`, 'none', 1.8, '#b87938');
     }
-    head += path('M61 72 Q68 45 110 44 Q158 40 180 70 Q194 91 183 116 L192 119 L181 127 L186 134 L172 135 Q155 154 120 155 Q81 156 64 137 L51 137 L57 128 L47 122 L58 115 Q48 92 61 72Z', coat, 3.8);
-    head += path('M65 83 Q70 56 105 53', 'none', 3, '#fff4d9');
+    const headShape = panda
+        ? 'M57 91 C55 55 83 43 120 44 C162 43 184 61 185 94 C190 132 164 154 120 155 C77 155 50 132 57 91Z'
+        : red
+            ? 'M61 74 Q72 46 109 45 L118 39 124 45 Q163 42 179 74 L185 105 199 114 184 119 194 128 177 130 181 137 Q150 156 120 153 Q84 157 60 137 L64 131 46 128 56 119 41 113 57 104Z'
+            : dragon
+                ? 'M64 76 Q69 47 103 47 L113 38 122 46 Q159 43 174 68 Q190 83 179 104 Q200 116 185 137 Q169 158 126 153 Q78 155 62 131 Q50 116 64 76Z'
+                : monkey
+                    ? 'M62 84 Q61 51 99 47 L110 40 120 46 Q163 40 177 72 Q190 102 174 127 Q159 149 121 150 Q79 152 64 129 Q52 109 62 84Z'
+                    : 'M73 79 Q71 53 98 48 Q130 40 150 62 Q165 80 158 104 L172 126 Q178 151 153 161 Q126 169 108 151 L82 126 Q63 107 73 79Z';
+    head += path(headShape, coat, 4.2);
+    head += path(panda ? 'M67 78 Q78 53 105 53' : 'M72 70 Q86 51 104 54', 'none', 2.2, '#fff4d9');
     if (red) {
         head += path('M59 94 Q74 89 91 111 L112 132 Q83 149 64 126 L53 124 L62 115 L54 110Z', cream, 0);
         head += path('M180 91 Q158 94 148 111 L127 133 Q160 149 178 125 L187 122 L179 113 L185 106Z', cream, 0);
         head += path('M83 76 Q94 64 106 75 M141 74 Q154 62 165 73', 'none', 6, '#fff0da');
     }
     if (monkey) head += path('M67 98 C60 64 100 62 120 85 C139 60 178 66 174 101 Q181 139 123 146 Q70 147 67 98Z', cream, 2);
-    if (panda) for (const x of [88, 151]) head += ellipse(x, 101, 24, 29, dark, 0);
+    if (panda) for (const x of [88, 151]) head += `<g transform="rotate(${x < 120 ? 24 : -24} ${x} 98)">${path(`M${x} 67 C${x+29} 70 ${x+31} 119 ${x+8} 130 C${x-16} 139 ${x-29} 109 ${x-22} 88 Q${x-15} 69 ${x} 67Z`, dark, 0)}</g>`;
+    if (red) for (const x of [88, 150]) head += path(`M${x-8} 110 Q${x} 116 ${x+9} 110 L${x+6} 128 Q${x-2} 136 ${x-7} 124Z`, '#793f30', 0);
     if (unicorn) {
+        for (let i = 5; i >= 0; i--) head += path(`M${78+i*4} 57 C${37+i*4} 74 ${72+i*4} 105 ${50+i*4} 123 C${25+i*4} 149 ${76+i*4} 177 ${82+i*4} 142 Q${59+i*4} 157 ${76+i*4} 124 C${96+i*4} 99 ${59+i*4} 88 ${91+i*4} 62`, rainbow[i]!, 0.7);
         for (let i = 5; i >= 0; i--) head += path(`M${77+i*13} 69 C${52+i*13} 43 ${86+i*12} 29 ${102+i*10} 48 Q${112+i*10} 71 ${95+i*12} 77`, rainbow[i]!, 2);
         head += path('M114 55 L129 8 Q137 29 137 56Z', gold) + path('M124 27 l10 4 m-14 7 15 5', 'none', 2, '#b87938');
     }
     if (monkey || dragon) head += path('M101 48 Q91 29 108 33 L114 42 Q111 18 125 29 L131 43 Q143 30 146 43 L144 53', coat, 3);
     let face = '';
     for (const x of [88, 150]) {
-        if (e === 'joie' || e === 'dodo') {
-            face += path(e === 'joie' ? `M${x-14} 104 Q${x} 85 ${x+14} 104` : `M${x-14} 98 Q${x} 112 ${x+14} 98`, 'none', 4.5);
+        if (e === 'dodo') {
+            face += path(`M${x-14} 98 Q${x} 112 ${x+14} 98`, 'none', 4.5);
             face += path(`M${x-11} 104 l-4 3`, 'none', 2.5);
         } else {
-            face += ellipse(x, 100, 17, e === 'surprise' ? 23 : 20, '#fffdf4', 2.5);
+            face += ellipse(x, 100, 21, e === 'surprise' ? 28 : 26, '#fffdf4', 2.5);
             const look = e === 'concentre' ? 5 : 0;
-            face += ellipse(x+look, 103, 10, 14, url('iris'), 1.2) + ellipse(x+look+1, 105, 5.5, 9, '#392e35', 0);
+            face += ellipse(x+look, 103, 13, 18, url('iris'), 1.2) + ellipse(x+look+1, 105, 8, 13, '#392e35', 0);
             face += ellipse(x+look-4, 97, 4, 5, '#ffffff', 0) + ellipse(x+look+4, 109, 2, 2.5, '#ffffff', 0);
-            face += path(`M${x-16} 87 Q${x} 77 ${x+16} 88`, 'none', 2.5);
+            face += path(`M${x-20} 87 Q${x} 66 ${x+20} 87 M${x-18} 82 l-5 -5 M${x+17} 81 l4 -5`, 'none', 4);
         }
         const left = x < 120;
-        face += path(e === 'triste' ? `M${x-13} ${left?77:70} Q${x} 68 ${x+13} ${left?70:77}` : e === 'concentre' ? `M${x-13} ${left?73:81} L${x+12} ${left?82:73}` : `M${x-12} 76 Q${x} ${e==='surprise'?61:69} ${x+12} 76`, 'none', 3);
+        face += path(e === 'triste' ? `M${x-13} ${left?77:70} Q${x} 68 ${x+13} ${left?70:77}` : e === 'concentre' ? `M${x-13} ${left?73:81} L${x+12} ${left?82:73}` : `M${x-12} 69 Q${x} ${e==='surprise'?57:62} ${x+12} 69`, 'none', 3);
         face += ellipse(x-5, 124, 15, 7, pink, 0) + ellipse(x-9, 122, 5, 2, '#ffe3dd', 0);
     }
-    face += ellipse(120, 121, unicorn ? 23 : 16, unicorn ? 14 : 10, cream, 0);
-    face += dragon || unicorn ? ellipse(112, 119, 2, 3, ink, 0) + ellipse(129, 119, 2, 3, ink, 0) : path('M113 116 Q120 111 127 116 Q125 125 120 124 Q115 123 113 116Z', dark, 1.5);
+    if (e === 'triste') face += path('M166 117 C162 126 157 132 163 136 C176 142 178 130 166 117Z', '#88d9ed', 1.2, '#4a9cbb') + ellipse(164, 129, 2, 3, '#ffffff', 0);
+    face += dragon
+        ? path('M99 117 Q110 105 134 111 Q148 111 160 120 C187 117 191 145 166 151 Q140 159 116 145 Q98 139 99 117Z', coat, 2.5) + path('M148 145 Q167 151 179 138', 'none', 1.5)
+        : unicorn
+            ? path('M111 121 Q123 114 145 119 Q168 121 169 143 Q169 159 147 160 Q121 163 109 146 Q103 133 111 121Z', '#ffe5db', 2)
+            : ellipse(120, 123, panda ? 28 : 18, panda ? 17 : 11, panda ? coat : cream, 0);
+    if (dragon || unicorn) face += ellipse(dragon ? 153 : 128, dragon ? 126 : 136, 3, 4, ink, 0) + ellipse(dragon ? 172 : 151, dragon ? 129 : 136, 3, 4, ink, 0);
+    face += '<g' + (unicorn ? ' transform="translate(16 13) scale(1 .94)"' : dragon ? ' transform="translate(13 6)"' : '') + '>';
+    face += dragon || unicorn ? '' : path('M113 116 Q120 111 127 116 Q125 125 120 124 Q115 123 113 116Z', dark, 1.5);
     if (e === 'joie') face += path('M103 131 Q120 140 137 129 Q133 151 120 150 Q108 148 103 131Z', '#733d45', 2) + path('M111 144 Q120 135 130 143 Q123 153 111 144Z', pink, 0) + path('M109 133 Q120 137 131 132 L128 138 113 138Z', '#fff9ed', 0);
     else if (e === 'surprise') face += ellipse(120, 140, 8, 11, '#733d45', 2) + ellipse(118, 145, 4, 3, pink, 0);
     else if (e === 'triste') face += path('M108 141 Q120 129 133 141', 'none', 3);
     else if (e === 'concentre') face += path('M108 135 Q120 141 133 133', 'none', 2.5) + path('M123 138 Q126 150 133 144 L133 135', pink, 1.8);
     else face += path('M111 136 Q120 142 129 136', 'none', 2.5) + '<text x="183" y="66" fill="#805b96" font-size="23" font-family="sans-serif" font-weight="bold">z</text><text x="202" y="45" fill="#805b96" font-size="16" font-family="sans-serif">z</text>';
+    face += '</g>';
     let props = '';
     if (panda) {
         props += path('M56 183 L70 131', 'none', 7, '#609642');
@@ -111,6 +139,7 @@ export function characterSvg(id: CharacterId, expression: Expression = 'joie', a
         props += ellipse(166,65,6,6,gold,1.5);
     }
     if (unicorn) props += star(157, 177, 19) + star(200, 116, 8) + star(45, 155, 7);
+    if (panda || red) body += path('M98 158 l-5 8 9 -2 -3 10 M118 183 l-4 8 7 -2 -2 8', 'none', 1.4, panda ? '#d3c5b1' : '#f5be88');
     // Small specular marks on the paws and belly reinforce the shared light source.
     body += path('M91 151 Q89 164 94 171 M68 145 Q65 151 67 158', 'none', 2.5, '#ffe9d8');
     const movement = motion === 'reduce' ? '' : animation === 'special' ? '<animateTransform attributeName="transform" type="rotate" values="-4 120 180;4 120 180;-4 120 180" dur="4s" repeatCount="indefinite"/>' : `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${animation === 'saut' ? -12 : animation === 'celebration' ? -7 : animation === 'marche' ? -4 : -2};0 0" dur="${animation === 'repos' ? 4.8 : 2.8}s" repeatCount="indefinite"/>`;
