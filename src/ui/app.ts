@@ -7,6 +7,7 @@ import { formatDigital, say, spokenPrompt, type Locale } from '../engine/text';
 import { answer, stars, recordBest, unlocked, recordKey, type Attempt } from '../engine/progress';
 import { readSave, writeSave, browserStorage } from '../shell/storage';
 import { clockSvg, wireClock } from './clock';
+import { chooseScene, sceneSvg } from './scene';
 
 const root = document.querySelector<HTMLElement>('#app')!;
 const storage = browserStorage();
@@ -27,6 +28,20 @@ let expression: Expression = 'concentre';
 const tr = (fr: string, en: string): string => save.locale === 'fr' ? fr : en;
 const persist = (): void => writeSave(storage, save);
 const motion = (): 'full' | 'reduce' => matchMedia('(prefers-reduced-motion: reduce)').matches ? 'reduce' : 'full';
+function updateScene(): void {
+    const scene = chooseScene(level, displayed, new Date(), screen === 'exercise');
+    if (document.body.dataset.scene !== scene) {
+        document.body.dataset.scene = scene;
+        let backdrop = document.querySelector('#scene');
+        if (!backdrop) {
+            backdrop = document.createElement('div');
+            backdrop.id = 'scene';
+            document.body.prepend(backdrop);
+        }
+        backdrop.innerHTML = sceneSvg(scene);
+    }
+    document.body.style.setProperty('--accent', characters[save.guide].accent);
+}
 function guide(): string {
     return `<aside class="guide">
         ${characterSvg(save.guide, expression, screen === 'result' ? 'celebration' : 'repos', motion())}
@@ -121,6 +136,7 @@ function updateGuide(): void {
 }
 
 function render(): void {
+    updateScene();
     document.documentElement.lang = save.locale;
     root.dataset.currentLevel = String(level);
     root.dataset.currentKind = kind;
@@ -183,7 +199,7 @@ function render(): void {
             ${button(tr('Accueil', 'Home'), 'back')}
             <h1>${tr('Série terminée !', 'Session complete!')}</h1>
             <div class="stars" aria-label="${starCount} ${tr('étoiles', 'stars')}">
-                ${Array.from({ length: 3 }, (_, index) => `<svg viewBox="0 0 100 100" aria-hidden="true" class="${index < starCount ? 'earned' : 'unearned'}"><path d="M50 7 63 34 93 38 71 59 76 90 50 75 24 90 29 59 7 38 37 34Z"/></svg>`).join('')}
+                ${Array.from({ length: 3 }, (_, index) => `<svg viewBox="0 0 100 100" aria-hidden="true" class="${index < starCount ? 'earned' : 'unearned'}"><defs><linearGradient id="gold-${index}" x2=".7" y2="1"><stop stop-color="#fff8b5"/><stop offset=".45" stop-color="#ffd442"/><stop offset="1" stop-color="#ef9c15"/></linearGradient></defs><path style="${index < starCount ? `fill:url(#gold-${index})` : ''}" d="M50 7 63 34 93 38 71 59 76 90 50 75 24 90 29 59 7 38 37 34Z"/><path class="star-glint" d="M32 38 49 13 56 31Q40 29 32 38"/><path class="sparkle" d="M9 9v12M3 15h12M87 75v14M80 82h14"/></svg>`).join('')}
             </div>
             <p class="score">${attempt.score}/10</p>${guide()}
             ${button(tr('Encore', 'Again'), 'again')}
@@ -226,7 +242,7 @@ function render(): void {
             <div class="clock-wrap">
                 ${clockSvg(displayed, save.locale, kind === 'set', level === 1)}
                 <output id="digital" ${kind === 'read' ? `aria-label="${tr('À toi de trouver', 'Your turn to find out')}"` : ''}>${kind === 'read' ? '--:--' : formatDigital(displayed, style)}</output>
-                ${level === 6 || level === 8 ? period(question.target) : ''}
+                ${level === 6 || level === 8 ? period(displayed) : ''}
             </div>
             ${halfDay}
             <div class="dots" aria-label="${attempt.index + 1}/10">${dots}</div>${guide()}
@@ -235,6 +251,9 @@ function render(): void {
         if (kind === 'set') {
             const updateClock = wireClock(root.querySelector<SVGSVGElement>('#clock')!, displayed, levelInfo(level).step, save.locale, t => {
                 displayed = t;
+                updateScene();
+                const cue = root.querySelector('.period');
+                if (cue) cue.outerHTML = period(t);
                 const digital = root.querySelector('#digital');
                 if (digital) digital.textContent = formatDigital(t, style);
                 root.querySelectorAll<HTMLButtonElement>('[data-half]').forEach(control => control.setAttribute('aria-pressed', String(Number(control.dataset.half) === Math.floor(t.h / 12))));
@@ -275,7 +294,7 @@ const hook = Object.freeze({
     state: () => {
         const rect = root.querySelector('#clock')?.getBoundingClientRect();
         return structuredClone({
-            screen, level, kind, index: attempt.index, question: session[attempt.index] ?? null, displayed, score: attempt.score, dial: rect ? {
+            scene: document.body.dataset.scene, screen, level, kind, index: attempt.index, question: session[attempt.index] ?? null, displayed, score: attempt.score, dial: rect ? {
                 cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2, radius: rect.width * 154 / 320, hourRadius: rect.width * 83 / 320, minuteRadius: rect.width * 126 / 320
             } : null
         });
@@ -285,3 +304,6 @@ Object.defineProperty(window, '__tictac', {
     value: hook, writable: false, configurable: false
 });
 render();
+
+// Follow a device-time boundary even when the child leaves a screen open.
+window.setInterval(updateScene, 60_000);

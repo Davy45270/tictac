@@ -18,6 +18,7 @@ export function clockSvg(time: Time, locale: Locale, adjustable: boolean, hoursO
         return `<g id="${id}" ${attributes}>
             <line class="hit" x1="160" y1="160" x2="${x}" y2="${y}"/>
             <line class="needle" x1="160" y1="160" x2="${x}" y2="${y}" stroke="${color}" stroke-width="${width}"/>
+        <path class="hand-shape" pointer-events="none" transform="rotate(${angle} 160 160)" d="M160 ${160-radius}Q${160-width*1.4} ${174-radius} ${160-width/2} 150Q${160-width} 173 160 177Q${160+width} 173 ${160+width/2} 150Q${160+width*1.4} ${174-radius} 160 ${160-radius}Z" fill="${color}" stroke="#fff6dc" stroke-width="1.5"/>
         </g>`;
     };
     const ticks = Array.from({length: 60}, (_, index) => {
@@ -27,14 +28,15 @@ export function clockSvg(time: Time, locale: Locale, adjustable: boolean, hoursO
     }).join('');
     const numbers = Array.from({length: 12}, (_, index) => {
         const [x, y] = point((index + 1) * 30, 119);
-        return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central">${index + 1}</text>`;
+        return `<text x="${x}" y="${y}" class="${(index + 1) % 3 === 0 ? 'cardinal' : ''}" text-anchor="middle" dominant-baseline="central">${index + 1}</text>`;
     }).join('');
     return `<svg id="clock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" aria-label="${locale === 'fr' ? 'Horloge' : 'Clock'}">
-        <circle cx="160" cy="160" r="154" fill="white" stroke="#164e63" stroke-width="5"/>
-        ${ticks}${numbers}
+        <defs><linearGradient id="case" x2=".8" y2="1"><stop stop-color="#b4f8f0"/><stop offset=".35" stop-color="#39b5bf"/><stop offset="1" stop-color="#17506c"/></linearGradient><radialGradient id="face" cx=".35" cy=".25" r=".8"><stop stop-color="#fffef6"/><stop offset="1" stop-color="#f5e4bc"/></radialGradient><radialGradient id="hub" cx=".3" cy=".2"><stop stop-color="#fff9c4"/><stop offset=".45" stop-color="#ffda5b"/><stop offset="1" stop-color="#b46b18"/></radialGradient></defs>
+        <g pointer-events="none"><circle cx="160" cy="160" r="157" fill="url(#case)" stroke="#20516a" stroke-width="4"/><circle cx="160" cy="160" r="145" fill="url(#face)" stroke="#c7f0e7" stroke-width="3"/><path d="M35 91A144 144 0 0 1 225 29" fill="none" stroke="#fff" opacity=".65" stroke-width="6" stroke-linecap="round"/></g>
+        <g pointer-events="none">${ticks}${numbers}</g>
         ${hand('hour', hourAngle(time), 83, '#9b2960', 10)}
         ${hand('minute', minuteAngle(time), 126, '#066b89', 6)}
-        <circle cx="160" cy="160" r="9" fill="#164e63" pointer-events="none"/>
+        <circle cx="160" cy="160" r="11" fill="url(#hub)" stroke="#9c671d" stroke-width="2" pointer-events="none"/>
     </svg>`;
 }
 
@@ -60,6 +62,7 @@ export function wireClock(svg: SVGSVGElement, initial: Time, step: Step, locale:
                 line.setAttribute('x2', String(x));
                 line.setAttribute('y2', String(y));
             });
+            group?.querySelector('.hand-shape')?.setAttribute('transform', `rotate(${angle} 160 160)`);
             group?.setAttribute('aria-valuetext', say(time, locale));
             group?.setAttribute('aria-valuenow', String(id === 'hour' ? time.h % 12 : time.m));
         }
