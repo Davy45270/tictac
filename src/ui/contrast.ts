@@ -28,7 +28,7 @@ export function buttonColors(accent: string, scene = 'day') {
         correctInk: '#234a2a', correct: '#def3df',
         incorrectInk: '#754315', incorrect: '#fff0da', levelInk: '#835000'
     };
-    if (scene === 'night') return { ...colors, ink: '#f5f7ff', levelInk: '#ffe09a', light: '#243e62', base: '#172b4d', hoverLight: '#345071', hover: '#243e62', character: '#172b4d', selected: '#345071', actionInk: '#f5f7ff', actionLight: '#345071', action: '#243e62', actionHover: '#345071', disabledInk: '#d0d5df', disabled: '#303c51' };
+    if (scene === 'night') return { ...colors, ink: '#f5f7ff', levelInk: '#ffe09a', light: '#243e62', base: '#172b4d', hoverLight: '#345071', hover: '#243e62', character: '#172b4d', selected: '#345071', actionInk: '#f5f7ff', actionLight: '#345071', action: '#243e62', actionHover: '#345071', disabledInk: '#d0d5df', disabled: '#303c51', correctInk: '#d6ffdf', correct: '#214632', incorrectInk: '#ffe3ba', incorrect: '#513722' };
     if (scene === 'evening') return { ...colors, light: '#fff3e6', base: '#ffdfbb', character: '#ffdfbb' };
     return colors;
 }

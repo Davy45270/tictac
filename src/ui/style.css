@@ -508,7 +508,7 @@ main[data-screen="exercise"] { max-width: 600px; }
     main[data-screen="exercise"] .answers { gap: 8px; padding: 8px; }
     main[data-screen="exercise"] .answers button { min-height: 64px; padding: 6px; font-size: .95rem; line-height: 1.2; }
     main[data-screen="exercise"] .half-day { margin: 6px 0; gap: 8px; }
-    main[data-screen="exercise"] .half-day button { min-height: 48px; padding: 2px 6px; font-size: .85rem; }
+    main[data-screen="exercise"] .half-day button { min-height: 64px; padding: 2px 6px; font-size: .85rem; }
     main[data-screen="exercise"] .half-day button svg { width: 24px; height: 18px; }
     main[data-screen="exercise"] .clock-wrap .period { position: static; font-size: .8rem; height: 26px; }
     main[data-screen="exercise"] #listen { margin: 8px auto; }
@@ -525,7 +525,7 @@ body[data-scene="night"] .levels button:disabled .level-number { color: #263547;
     main[data-screen="exercise"] .clock-wrap:has(.period) #digital { grid-column: 1; }
     main[data-screen="exercise"] .clock-wrap .period { grid-column: 2; margin-top: 8px; padding: 0 4px; }
     main[data-screen="exercise"] .dots { margin: 4px 0; }
-    main[data-screen="exercise"] .answers button { min-height: 58px; }
+    main[data-screen="exercise"] .answers button { min-height: 64px; }
     main[data-screen="exercise"] nav span { flex: 1; min-width: 0; }
     main[data-screen="exercise"] nav #listen { margin: 0; padding: 6px; font-size: .85rem; }
 }
@@ -541,4 +541,51 @@ body[data-scene="night"] .levels button:disabled .level-number { color: #263547;
     main[data-screen="exercise"] { margin-block: 0; }
     main[data-screen="exercise"] .prompt { margin-bottom: 10px; }
     main[data-screen="exercise"] .answers { padding: 6px; gap: 6px; }
+}
+
+/* Corner artwork has its own viewport, independent of landscape cropping. */
+.scene-orb { position: absolute; top: 4px; right: 6px; width: 64px; height: 64px; }
+header { padding-top: 54px; }
+nav { padding-right: 66px; }
+nav .level-label {
+    flex: 0 1 auto;
+    padding: 5px 9px;
+    border: 1px solid #ffffff99;
+    border-radius: 14px;
+    background: var(--scene-panel);
+    color: var(--scene-ink);
+    font-weight: 700;
+    text-shadow: none;
+    line-height: 1.15;
+}
+.hand-shape { filter: none; }
+.hand-shadow { filter: blur(1px); }
+.needle { stroke-opacity: 0; }
+.guide p::before {
+    content: '';
+    position: absolute;
+    left: -9px;
+    top: calc(50% - 7px);
+    width: 14px;
+    height: 14px;
+    background: var(--scene-panel);
+    border-left: 1px solid #ffffff99;
+    border-bottom: 1px solid #ffffff99;
+    transform: rotate(45deg);
+}
+main[data-screen="exercise"] .guide { height: 120px; min-height: 120px; position: relative; z-index: 1; }
+main[data-screen="exercise"] .guide > svg { width: 160px; min-width: 160px; height: 160px; margin: -20px -10px; }
+main[data-screen="result"] .guide p::before { left: calc(50% - 7px); top: -8px; transform: rotate(135deg); }
+.answers button { position: relative; }
+.answer-sparkles { position: fixed; z-index: 10; pointer-events: none; animation: answer-sparkle 600ms ease-out both; }
+.answer-sparkles svg { display: block; width: 100%; height: 100%; overflow: visible; fill: #ffce32; stroke: #996017; stroke-width: 1; }
+@keyframes answer-sparkle { from { opacity: 0; transform: scale(.75); } 25% { opacity: 1; } to { opacity: 0; transform: scale(1.35); } }
+body[data-scene="night"] #digital,
+body[data-scene="night"] .period,
+body[data-scene="night"] .dots span { background: var(--scene-panel); color: var(--scene-ink); text-shadow: none; }
+body[data-scene="night"] .dots .done { background: var(--button-selected); color: var(--scene-ink); }
+body[data-scene="night"] .dots .current { background: var(--button-selected); outline-color: #ffe09a; }
+body[data-scene="night"] .period svg { filter: brightness(0) invert(1); }
+@media(prefers-reduced-motion:reduce) {
+    .answer-sparkles { display: none; }
 }

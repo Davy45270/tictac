@@ -17,7 +17,8 @@ export function clockSvg(time: Time, locale: Locale, adjustable: boolean, hoursO
             : '';
         return `<g id="${id}" ${attributes}>
             <line class="hit" x1="160" y1="160" x2="${x}" y2="${y}"/>
-            <line class="needle" x1="160" y1="160" x2="${x}" y2="${y}" stroke="${color}" stroke-width="${width}"/>
+            <line class="needle" x1="160" y1="160" x2="${x}" y2="${y}" stroke="${color}" stroke-width="${width}" stroke-opacity="0"/>
+        <path class="hand-shadow" pointer-events="none" transform="translate(3 3) rotate(${angle} 160 160)" d="M160 ${160-radius}Q${160-width*1.4} ${174-radius} ${160-width/2} 150Q${160-width} 173 160 177Q${160+width} 173 ${160+width/2} 150Q${160+width*1.4} ${174-radius} 160 ${160-radius}Z" fill="#203c4e" opacity=".25"/>
         <path class="hand-shape" pointer-events="none" transform="rotate(${angle} 160 160)" d="M160 ${160-radius}Q${160-width*1.4} ${174-radius} ${160-width/2} 150Q${160-width} 173 160 177Q${160+width} 173 ${160+width/2} 150Q${160+width*1.4} ${174-radius} 160 ${160-radius}Z" fill="${color}" stroke="#fff6dc" stroke-width="1.5"/>
         </g>`;
     };
@@ -63,6 +64,7 @@ export function wireClock(svg: SVGSVGElement, initial: Time, step: Step, locale:
                 line.setAttribute('x2', String(x));
                 line.setAttribute('y2', String(y));
             });
+            group?.querySelector('.hand-shadow')?.setAttribute('transform', `translate(3 3) rotate(${angle} 160 160)`);
             group?.querySelector('.hand-shape')?.setAttribute('transform', `rotate(${angle} 160 160)`);
             group?.setAttribute('aria-valuetext', say(time, locale));
             group?.setAttribute('aria-valuenow', String(id === 'hour' ? time.h % 12 : time.m));

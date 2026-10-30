@@ -42,3 +42,18 @@ describe('landscape glass contrast', () => {
         expect(contrastRatio(colors.heading, colors.outline)).toBeGreaterThanOrEqual(4.5);
     });
 });
+
+// Night badges, digital display and feedback use the same opaque palette as glass.
+describe('night auxiliary surfaces', () => {
+    it('keeps progress badges and feedback at AA', () => {
+        const scene = sceneColors('night');
+        const buttons = buttonColors(characters.panda.accent, 'night');
+        for (const surface of [scene.panel, buttons.selected]) {
+            expect(contrastRatio(scene.ink, surface)).toBeGreaterThanOrEqual(4.5);
+        }
+        const css = readFileSync(new URL('../src/ui/style.css', import.meta.url), 'utf8');
+        for (const selector of ['#digital', '.period', '.dots span', '.dots .done', '.dots .current']) {
+            expect(css).toContain(`body[data-scene="night"] ${selector}`);
+        }
+    });
+});

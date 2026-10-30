@@ -54,7 +54,7 @@ function updateScene(): void {
 }
 function guide(): string {
     return `<aside class="guide">
-        ${characterSvg(save.guide, expression, screen === 'result' ? 'celebration' : 'repos', motion())}
+        ${characterSvg(save.guide, expression, screen === 'result' ? 'celebration' : expression === 'joie' ? 'saut' : 'repos', motion())}
         <p id="guide-message" role="status" aria-live="polite">${feedback || tr('Prends ton temps, on cherche ensemble !', 'Take your time, let’s work together!')}</p>
     </aside>`;
 }
@@ -116,6 +116,7 @@ function submit(correct: boolean): void {
         digital.textContent = formatDigital(solved.target, level === 6 || level === 8 ? '24' : '12');
         digital.removeAttribute('aria-label');
     }
+    sparkleAnswer(root.querySelector('.answers .correct, #check'));
     expression = 'joie';
     feedback = tr('Bravo, tu as trouvé !', 'Well done, you found it!');
     if (attempt.index === session.length) {
@@ -138,6 +139,17 @@ function submit(correct: boolean): void {
         });
     }
     updateGuide();
+}
+
+function sparkleAnswer(control: Element | null): void {
+    if (!control || motionPreference.matches) return;
+    const bounds = control.getBoundingClientRect();
+    const sparkle = document.createElement('div');
+    sparkle.className = 'answer-sparkles';
+    sparkle.style.cssText = `left:${bounds.left}px;top:${bounds.top}px;width:${bounds.width}px;height:${bounds.height}px`;
+    sparkle.innerHTML = `<svg viewBox="0 0 180 64" preserveAspectRatio="none" aria-hidden="true">${[[8, 12], [45, 3], [140, 5], [174, 25], [156, 59], [24, 58]].map(([x, y]) => `<path d="M${x} ${y! - 7}l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z"/>`).join('')}</svg>`;
+    document.body.append(sparkle);
+    window.setTimeout(() => sparkle.remove(), 600);
 }
 
 function updateGuide(): void {
@@ -247,7 +259,7 @@ function render(): void {
             </div>` : '';
         const canSpeak = 'speechSynthesis' in window && speechSynthesis.getVoices().some(voice => voice.localService && voice.lang.startsWith(save.locale));
         root.innerHTML = `
-            <nav>${button(tr('Retour', 'Back'), 'back')}<span>${levelInfo(level)[save.locale]}</span>${canSpeak ? button(tr('Écouter', 'Listen'), 'listen') : ''}</nav>
+            <nav>${button(tr('Retour', 'Back'), 'back')}<span class="level-label">${levelInfo(level)[save.locale]}</span>${canSpeak ? button(tr('Écouter', 'Listen'), 'listen') : ''}</nav>
             <section class="glass prompt"><h1 class="instruction">${instruction}</h1>${settingPrompt}</section>
             <div class="clock-wrap">
                 ${clockSvg(displayed, save.locale, kind === 'set', level === 1)}
