@@ -286,3 +286,46 @@ test('level seven reads and speaks the starting time without revealing the targe
         if (index < 9) await page.locator('#continue').click();
     }
 });
+
+for (const [locale, kind] of [['en', 'read'], ['en', 'set'], ['fr', 'set']] as const) {
+    test(`level seven ${locale} ${kind}: visible instruction and speech give the start without the answer`, async ({ page }) => {
+        await page.addInitScript(({ locale }) => {
+            localStorage.setItem('tictac.v1', JSON.stringify({
+                version: 1, locale, guide: 'panda', records: {
+                    '1.read': 9, '2.read': 9, '3.read': 9, '4.read': 9, '5.read': 9, '6.read': 9
+                }
+            }));
+            Object.defineProperty(window, 'SpeechSynthesisUtterance', { value: class {
+                text: string;
+                lang = '';
+                voice: unknown = null;
+                constructor(text: string) { this.text = text; }
+            } });
+            const phrases: string[] = [];
+            Object.defineProperty(window, '__spoken', { value: phrases });
+            Object.defineProperty(window.speechSynthesis, 'getVoices', {
+                value: () => [{ localService: true, lang: locale === 'en' ? 'en-GB' : 'fr-FR' }]
+            });
+            Object.defineProperty(window.speechSynthesis, 'speak', {
+                value: (utterance: SpeechSynthesisUtterance) => phrases.push(utterance.text)
+            });
+        }, { locale });
+        await page.goto('/');
+        if (kind === 'set') await page.locator('#set').click();
+        await page.locator('[data-level="7"]').click();
+        await expect(page.locator('html')).toHaveAttribute('lang', locale);
+        const question = (await state(page)).question!;
+        const instruction = locale === 'en' ? `In ${question.delta} minutes it will be…`
+            : `Dans ${question.delta} minutes, il sera…`;
+        await expect(page.locator('.instruction')).toHaveText(instruction);
+        const startWords = say(question.start, locale);
+        if (kind === 'set') {
+            await expect(page.locator('#target')).toHaveText(`${startWords} · ${question.start.h % 12 || 12}:${String(question.start.m).padStart(2, '0')}`);
+        }
+        await page.locator('#listen').click();
+        const phrases = await page.evaluate(() => (window as unknown as { __spoken: string[] }).__spoken);
+        expect(phrases).toEqual([`${instruction} ${locale === 'en' ? 'Start' : 'Départ'} : ${startWords}.`]);
+        // The target may be a substring of the legitimate starting time.
+        expect(phrases[0]!.replace(startWords, '')).not.toContain(say(question.target, locale));
+    });
+}

@@ -72,6 +72,7 @@ export function wireClock(svg: SVGSVGElement, initial: Time, step: Step, locale:
     svg.addEventListener('pointerdown', event => {
         if (activePointerId !== undefined) return;
         const [x, y] = coordinates(event);
+        if (Math.hypot(x - 160, y - 160) < 12) return;
         const hourDistance = distanceToHand(x, y, hourAngle(time), 83);
         const minuteDistance = step === 60 ? Infinity : distanceToHand(x, y, minuteAngle(time), 126);
         const hitRadius = 24 * 320 / svg.getBoundingClientRect().width;

@@ -2,25 +2,25 @@ import { test, expect, state } from './helpers';
 import { hourAngle, minuteAngle } from '../../src/engine/time';
 import { makeRng } from '../../src/engine/session';
 
-test('noisy finger sessions: whole hours, five-minute, precise-minute and 24-hour settings', async ({
-    page, context
-}) => {
-    await page.addInitScript(() => localStorage.setItem('tictac.v1', JSON.stringify({
-        version: 1, locale: 'fr', guide: 'panda', records: {
-            '1.read': 9, '2.read': 9, '3.read': 9, '4.read': 9, '5.read': 9
-        }
-    })));
-    await page.goto('/');
-    const cdp = await context.newCDPSession(page);
-    const rng = makeRng(42);
-    const touch = async (type: 'touchStart' | 'touchMove' | 'touchEnd', x = 0, y = 0): Promise<void> => {
-        await cdp.send('Input.dispatchTouchEvent', {
-            type, touchPoints: type === 'touchEnd' ? [] : [{
-                x, y, id: 1, radiusX: 3, radiusY: 3, force: 1
-            }]
-        });
-    };
-    for (const level of [1, 4, 5, 6]) {
+for (const level of [1, 4, 5, 6]) {
+    test(`noisy finger session: level ${level}, ten perfect answers without scrolling`, async ({
+        page, context
+    }) => {
+        await page.addInitScript(() => localStorage.setItem('tictac.v1', JSON.stringify({
+            version: 1, locale: 'fr', guide: 'panda', records: {
+                '1.read': 9, '2.read': 9, '3.read': 9, '4.read': 9, '5.read': 9
+            }
+        })));
+        await page.goto('/');
+        const cdp = await context.newCDPSession(page);
+        const rng = makeRng(42);
+        const touch = async (type: 'touchStart' | 'touchMove' | 'touchEnd', x = 0, y = 0): Promise<void> => {
+            await cdp.send('Input.dispatchTouchEvent', {
+                type, touchPoints: type === 'touchEnd' ? [] : [{
+                    x, y, id: 1, radiusX: 3, radiusY: 3, force: 1
+                }]
+            });
+        };
         await page.locator('#set').click();
         await page.locator('[data-level]').nth(level - 1).click();
         const scroll = await page.evaluate(() => scrollY);
@@ -43,7 +43,7 @@ test('noisy finger sessions: whole hours, five-minute, precise-minute and 24-hou
                     // Finish near the intended minute tick after a noisy approach.
                     const noise = stepIndex === steps ? (level === 5 ? 0.2 : 2) : 8;
                     await touch('touchMove', dial.cx + Math.sin(angle) * radius + (rng() * 2 - 1) * noise, dial.cy - Math.cos(angle) * radius + (rng() * 2 - 1) * noise);
-                    await page.waitForTimeout(5 + Math.floor(rng() * 16));
+                    await page.waitForTimeout(2 + Math.floor(rng() * 7));
                 }
                 await touch('touchEnd');
             }
@@ -57,9 +57,8 @@ test('noisy finger sessions: whole hours, five-minute, precise-minute and 24-hou
         }
         await expect(page.locator('.score')).toHaveText('10/10');
         await expect(page.locator('.stars')).toHaveAttribute('aria-label', '3 étoiles');
-        await page.locator('#back').click();
-    }
-});
+    });
+}
 
 test('a second finger cannot redirect or release the first hand drag', async ({
     page, context
@@ -214,4 +213,107 @@ test('lostpointercapture alone releases the hand and permits a fresh gesture', a
     await touch('touchMove', 90);
     await expect.poll(async () => (await state(page)).displayed.m).toBe(15);
     await touch('touchEnd');
+});
+
+for (const hand of ['hour', 'minute'] as const) {
+    test(`${hand} hand has an effective 48px touch width on both sides`, async ({ page, context }) => {
+        await page.addInitScript(() => localStorage.setItem('tictac.v1', JSON.stringify({
+            version: 1, locale: 'fr', guide: 'panda', records: { '1.read': 9, '2.read': 9, '3.read': 9 }
+        })));
+        await page.goto('/');
+        const cdp = await context.newCDPSession(page);
+        for (const offset of [-30, -20, 20, 30]) {
+            await page.locator('#set').click();
+            await page.locator('[data-level="4"]').click();
+            await page.locator('#hour').focus();
+            for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight');
+            const dial = (await state(page)).dial!;
+            const angle = hand === 'hour' ? Math.PI / 2 : 0;
+            const radius = (hand === 'hour' ? dial.hourRadius : dial.minuteRadius) * .75;
+            // At 3:00 these shafts are perpendicular and far apart at these grips:
+            // the other hand is farther than 30px, so an out-of-width grip must fail.
+            const x = dial.cx + Math.sin(angle) * radius + Math.cos(angle) * offset;
+            const y = dial.cy - Math.cos(angle) * radius + Math.sin(angle) * offset;
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ id: 1, x, y }] });
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{
+                id: 1, x: dial.cx, y: dial.cy + radius
+            }] });
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+            const expected = Math.abs(offset) === 30 ? { h: 3, m: 0 }
+                : hand === 'hour' ? { h: 6, m: 0 } : { h: 3, m: 30 };
+            await expect.poll(async () => (await state(page)).displayed).toEqual(expected);
+            await expect(page.locator('#digital')).toHaveText(`${expected.h}:${String(expected.m).padStart(2, '0')}`);
+            await page.locator('#back').click();
+        }
+    });
+}
+
+test('central grip threshold rejects 11 SVG units and accepts 13 for each hand', async ({ page, context }) => {
+    await page.addInitScript(() => localStorage.setItem('tictac.v1', JSON.stringify({
+        version: 1, locale: 'fr', guide: 'panda', records: { '1.read': 9, '2.read': 9, '3.read': 9 }
+    })));
+    await page.goto('/');
+    const cdp = await context.newCDPSession(page);
+    for (const hand of ['hour', 'minute']) {
+        for (const units of [11, 13]) {
+            await page.locator('#set').click();
+            await page.locator('[data-level="4"]').click();
+            await page.locator('#hour').focus();
+            for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight');
+            const dial = (await state(page)).dial!;
+            const scale = (await page.locator('#clock').boundingBox())!.width / 320;
+            const radius = units * scale;
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{
+                id: 1, x: dial.cx + (hand === 'hour' ? radius : 0),
+                y: dial.cy - (hand === 'minute' ? radius : 0)
+            }] });
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{
+                id: 1, x: dial.cx, y: dial.cy + dial.minuteRadius * .8
+            }] });
+            await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+            await expect.poll(async () => (await state(page)).displayed).toEqual(units === 11
+                ? { h: 3, m: 0 } : hand === 'hour' ? { h: 6, m: 0 } : { h: 3, m: 30 });
+            await page.locator('#back').click();
+        }
+    }
+});
+
+test('half-hour drag through 89 then 181 degrees keeps 3:30 from 3:00', async ({ page, context }) => {
+    await page.addInitScript(() => localStorage.setItem('tictac.v1', JSON.stringify({
+        version: 1, locale: 'fr', guide: 'panda', records: { '1.read': 9 }
+    })));
+    await page.goto('/');
+    await page.locator('#set').click();
+    await page.locator('[data-level="2"]').click();
+    await page.locator('#hour').focus();
+    for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowRight');
+    await expect(page.locator('#digital')).toHaveText('3:00');
+    const dial = (await state(page)).dial!;
+    const cdp = await context.newCDPSession(page);
+    for (const angle of [0, 89, 181]) {
+        await cdp.send('Input.dispatchTouchEvent', {
+            type: angle === 0 ? 'touchStart' : 'touchMove', touchPoints: [{
+                id: 1, x: dial.cx + Math.sin(angle * Math.PI / 180) * dial.minuteRadius * .92,
+                y: dial.cy - Math.cos(angle * Math.PI / 180) * dial.minuteRadius * .92
+            }]
+        });
+        if (angle === 89) await expect(page.locator('#digital')).toHaveText('3:00');
+    }
+    await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect.poll(async () => (await state(page)).displayed).toEqual({ h: 3, m: 30 });
+    await expect(page.locator('#digital')).toHaveText('3:30');
+});
+
+test('answer and Check buttons measure at least 64px high on mobile', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('[data-level="1"]').click();
+    await expect(page.locator('[data-answer]')).toHaveCount(4);
+    for (const button of await page.locator('[data-answer]').all()) {
+        expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(64);
+    }
+    await page.locator('#back').click();
+    await page.locator('#set').click();
+    await page.locator('[data-level="1"]').click();
+    await expect(page.locator('#check')).toBeVisible();
+    expect((await page.locator('#check').boundingBox())!.height).toBeGreaterThanOrEqual(64);
 });
