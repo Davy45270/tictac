@@ -198,7 +198,7 @@ function render(): void {
                 <button id="set" aria-pressed="${kind === 'set'}">${tr('Régler', 'Set')}</button>
             </fieldset>
             <div class="levels glass">${levelButtons}</div>
-            <footer>${tr('Sans publicité. Tout reste sur cet appareil.', 'No ads. Everything stays on this device.')} · 0.2.0</footer>`;
+            <footer>${tr('Sans publicité. Tout reste sur cet appareil.', 'No ads. Everything stays on this device.')} · 0.3.0</footer>`;
         root.querySelector<HTMLSelectElement>('#locale')?.addEventListener('change', event => {
             save.locale = (event.target as HTMLSelectElement).value as Locale;
             persist();
