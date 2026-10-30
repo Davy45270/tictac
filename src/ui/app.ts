@@ -8,6 +8,7 @@ import { answer, stars, recordBest, unlocked, recordKey, type Attempt } from '..
 import { readSave, writeSave, browserStorage } from '../shell/storage';
 import { clockSvg, wireClock } from './clock';
 import { chooseScene, sceneSvg } from './scene';
+import { buttonColors } from './contrast';
 
 const root = document.querySelector<HTMLElement>('#app')!;
 const storage = browserStorage();
@@ -27,7 +28,9 @@ let feedback = '';
 let expression: Expression = 'concentre';
 const tr = (fr: string, en: string): string => save.locale === 'fr' ? fr : en;
 const persist = (): void => writeSave(storage, save);
-const motion = (): 'full' | 'reduce' => matchMedia('(prefers-reduced-motion: reduce)').matches ? 'reduce' : 'full';
+const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+const motion = (): 'full' | 'reduce' => motionPreference.matches ? 'reduce' : 'full';
+motionPreference.addEventListener('change', () => render());
 function updateScene(): void {
     const scene = chooseScene(level, displayed, new Date(), screen === 'exercise');
     if (document.body.dataset.scene !== scene) {
@@ -40,7 +43,11 @@ function updateScene(): void {
         }
         backdrop.innerHTML = sceneSvg(scene);
     }
-    document.body.style.setProperty('--accent', characters[save.guide].accent);
+    const accent = characters[save.guide].accent;
+    document.body.style.setProperty('--accent', accent);
+    for (const [name, value] of Object.entries(buttonColors(accent))) {
+        document.body.style.setProperty(`--button-${name}`, value);
+    }
 }
 function guide(): string {
     return `<aside class="guide">
@@ -144,7 +151,7 @@ function render(): void {
     if (screen === 'home') {
         const cast = ids.map(id => `
             <button class="character" data-guide="${id}" aria-pressed="${save.guide === id}">
-                ${characterSvg(id)}<span>${characters[id][save.locale]}</span>
+                ${characterSvg(id, 'joie', 'repos', motion())}<span>${characters[id][save.locale]}</span>
             </button>`).join('');
         const levelButtons = levels.map((info, index) => {
             const number = index + 1;
