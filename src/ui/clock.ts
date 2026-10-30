@@ -32,6 +32,7 @@ export function clockSvg(time: Time, locale: Locale, adjustable: boolean, hoursO
     }).join('');
     return `<svg id="clock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" aria-label="${locale === 'fr' ? 'Horloge' : 'Clock'}">
         <defs><linearGradient id="case" x2=".8" y2="1"><stop stop-color="#b4f8f0"/><stop offset=".35" stop-color="#39b5bf"/><stop offset="1" stop-color="#17506c"/></linearGradient><radialGradient id="face" cx=".35" cy=".25" r=".8"><stop stop-color="#fffef6"/><stop offset="1" stop-color="#f5e4bc"/></radialGradient><radialGradient id="hub" cx=".3" cy=".2"><stop stop-color="#fff9c4"/><stop offset=".45" stop-color="#ffda5b"/><stop offset="1" stop-color="#b46b18"/></radialGradient></defs>
+        <g pointer-events="none" aria-hidden="true"><path d="M44 34Q25 3 51 -7Q75 -17 88 8ZM232 8Q245 -17 269 -7Q295 3 276 34Z" fill="url(#case)" stroke="#20516a" stroke-width="4"/><path d="M70 294 60 324M250 294l10 30" stroke="#20516a" stroke-width="12" stroke-linecap="round"/></g>
         <g pointer-events="none"><circle cx="160" cy="160" r="157" fill="url(#case)" stroke="#20516a" stroke-width="4"/><circle cx="160" cy="160" r="145" fill="url(#face)" stroke="#c7f0e7" stroke-width="3"/><path d="M35 91A144 144 0 0 1 225 29" fill="none" stroke="#fff" opacity=".65" stroke-width="6" stroke-linecap="round"/></g>
         <g pointer-events="none">${ticks}${numbers}</g>
         ${hand('hour', hourAngle(time), 83, '#9b2960', 10)}

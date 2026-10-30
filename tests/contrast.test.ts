@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { characters, ids } from '../src/characters/model';
-import { buttonColors, contrastRatio, mixWithWhite } from '../src/ui/contrast';
+import { buttonColors, contrastRatio, mixWithWhite, sceneColors, glassOver } from '../src/ui/contrast';
 
 describe('WCAG button contrast', () => {
     it('uses the WCAG sRGB transfer function and white mixing', () => {
@@ -10,8 +10,8 @@ describe('WCAG button contrast', () => {
         expect(contrastRatio('#777777', '#ffffff')).toBeCloseTo(4.478, 3);
         expect(mixWithWhite('#000000', .24)).toBe('#c2c2c2');
     });
-    it.each(ids)('%s keeps every button surface at least 4.5:1', id => {
-        const colors = buttonColors(characters[id].accent);
+    it.each(ids.flatMap(id => ['day', 'evening', 'night'].map(scene => [id, scene] as const)))('%s %s keeps every button surface at least 4.5:1', (id, scene) => {
+        const colors = buttonColors(characters[id].accent, scene);
         const pairs = [
             ...['light', 'base', 'hoverLight', 'hover', 'character', 'selected'].flatMap(background =>
                 ['ink', 'levelInk'].map(ink => [ink, background])),
@@ -28,7 +28,17 @@ describe('WCAG button contrast', () => {
         for (const name of Object.keys(buttonColors(characters.panda.accent))) {
             expect(css).toContain(`var(--button-${name})`);
         }
-        expect(app).toContain('Object.entries(buttonColors(accent))');
+        expect(app).toContain('Object.entries(buttonColors(accent, scene))');
         expect(app).toContain('setProperty(`--button-${name}`, value)');
+    });
+});
+
+describe('landscape glass contrast', () => {
+    it.each(['morning', 'day', 'evening', 'night'])('%s keeps AA on opaque fallback and glass extremes', scene => {
+        const colors = sceneColors(scene);
+        for (const background of [colors.panel, glassOver(colors.panel, '#ffffff'), glassOver(colors.panel, '#000000')]) {
+            expect(contrastRatio(colors.ink, background)).toBeGreaterThanOrEqual(4.5);
+        }
+        expect(contrastRatio(colors.heading, colors.outline)).toBeGreaterThanOrEqual(4.5);
     });
 });

@@ -8,7 +8,7 @@ import { answer, stars, recordBest, unlocked, recordKey, type Attempt } from '..
 import { readSave, writeSave, browserStorage } from '../shell/storage';
 import { clockSvg, wireClock } from './clock';
 import { chooseScene, sceneSvg } from './scene';
-import { buttonColors } from './contrast';
+import { buttonColors, sceneColors } from './contrast';
 
 const root = document.querySelector<HTMLElement>('#app')!;
 const storage = browserStorage();
@@ -43,9 +43,12 @@ function updateScene(): void {
         }
         backdrop.innerHTML = sceneSvg(scene);
     }
+    for (const [name, value] of Object.entries(sceneColors(scene))) {
+        document.body.style.setProperty(`--scene-${name}`, value);
+    }
     const accent = characters[save.guide].accent;
     document.body.style.setProperty('--accent', accent);
-    for (const [name, value] of Object.entries(buttonColors(accent))) {
+    for (const [name, value] of Object.entries(buttonColors(accent, scene))) {
         document.body.style.setProperty(`--button-${name}`, value);
     }
 }
@@ -158,9 +161,9 @@ function render(): void {
             const score = save.records[recordKey(number, number === 8 ? 'read' : kind)] ?? 0;
             const available = unlocked(save.records, number);
             return `<button data-level="${number}" ${available ? '' : 'disabled'}>
-                <b>${number}. ${info[save.locale]}</b>
+                <b><i class="level-number" aria-hidden="true">${number}</i>${number}. ${info[save.locale]}</b>
                 <span aria-label="${stars(score)} ${tr('étoiles', 'stars')}">
-                    ${'★'.repeat(stars(score))}${'☆'.repeat(3 - stars(score))} ${available ? '' : '🔒'}
+                    ${'★'.repeat(stars(score))}${'☆'.repeat(3 - stars(score))} ${available ? '' : '<svg class="level-lock" viewBox="0 0 24 24" aria-label="Verrouillé / Locked" role="img"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v12H5Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="16" r="2" fill="currentColor"/></svg>'}
                 </span>
             </button>`;
         }).join('');
@@ -174,13 +177,13 @@ function render(): void {
                     <option value="en" ${save.locale === 'en' ? 'selected' : ''}>English</option>
                 </select>
             </label>
-            <h2>${tr('Choisis ton guide', 'Choose your guide')}</h2>
-            <div class="cast">${cast}</div>
-            <fieldset><legend>${tr('Comment jouer ?', 'How would you like to play?')}</legend>
+            <section class="glass guide-choice"><h2>${tr('Choisis ton guide', 'Choose your guide')}</h2>
+            <div class="cast">${cast}</div></section>
+            <fieldset class="glass"><legend>${tr('Comment jouer ?', 'How would you like to play?')}</legend>
                 <button id="read" aria-pressed="${kind === 'read'}">${tr('Lire', 'Read')}</button>
                 <button id="set" aria-pressed="${kind === 'set'}">${tr('Régler', 'Set')}</button>
             </fieldset>
-            <div class="levels">${levelButtons}</div>
+            <div class="levels glass">${levelButtons}</div>
             <footer>${tr('Sans publicité. Tout reste sur cet appareil.', 'No ads. Everything stays on this device.')} · 0.2.0</footer>`;
         root.querySelector<HTMLSelectElement>('#locale')?.addEventListener('change', event => {
             save.locale = (event.target as HTMLSelectElement).value as Locale;
@@ -244,8 +247,8 @@ function render(): void {
             </div>` : '';
         const canSpeak = 'speechSynthesis' in window && speechSynthesis.getVoices().some(voice => voice.localService && voice.lang.startsWith(save.locale));
         root.innerHTML = `
-            <nav>${button(tr('Retour', 'Back'), 'back')}<span>${levelInfo(level)[save.locale]}</span></nav>
-            <h1 class="instruction">${instruction}</h1>${settingPrompt}
+            <nav>${button(tr('Retour', 'Back'), 'back')}<span>${levelInfo(level)[save.locale]}</span>${canSpeak ? button(tr('Écouter', 'Listen'), 'listen') : ''}</nav>
+            <section class="glass prompt"><h1 class="instruction">${instruction}</h1>${settingPrompt}</section>
             <div class="clock-wrap">
                 ${clockSvg(displayed, save.locale, kind === 'set', level === 1)}
                 <output id="digital" ${kind === 'read' ? `aria-label="${tr('À toi de trouver', 'Your turn to find out')}"` : ''}>${kind === 'read' ? '--:--' : formatDigital(displayed, style)}</output>
@@ -253,8 +256,8 @@ function render(): void {
             </div>
             ${halfDay}
             <div class="dots" aria-label="${attempt.index + 1}/10">${dots}</div>${guide()}
-            <div id="actions" class="answers">${kind === 'set' ? button(tr('Valider', 'Check'), 'check') : answers}</div>
-            ${canSpeak ? button(tr('Écouter', 'Listen'), 'listen') : ''}`;
+            <div id="actions" class="answers glass">${kind === 'set' ? button(tr('Valider', 'Check'), 'check') : answers}</div>
+            `;
         if (kind === 'set') {
             const updateClock = wireClock(root.querySelector<SVGSVGElement>('#clock')!, displayed, levelInfo(level).step, save.locale, t => {
                 displayed = t;

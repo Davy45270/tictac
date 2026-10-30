@@ -124,3 +124,24 @@ for (const dynamic of [false, true]) test(`reduced motion ${dynamic ? 'enabled d
     await page.locator('#back').click();
     await expectStill(page);
 });
+
+for (const level of [1, 6, 8]) for (const mode of ['read', 'set']) {
+    test(`mobile level ${level} ${mode} fits with a large guide`, async ({ page }, testInfo) => {
+        test.skip(testInfo.project.name !== 'mobile', 'Portrait layout');
+        await page.setViewportSize({ width: 390, height: 844 });
+        await unlock(page);
+        await page.goto('/');
+        await page.locator(`#${mode}`).click();
+        await page.locator(`[data-level="${level}"]`).click();
+        await page.evaluate(() => document.fonts.ready.then(() => undefined));
+        if (level === 8) expect((await state(page)).kind).toBe('read');
+        const last = page.locator('[data-answer], #check').last();
+        const bounds = await last.boundingBox();
+        expect(bounds).not.toBeNull();
+        expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(844);
+        const guide = await page.locator('.guide > svg').boundingBox();
+        expect(guide!.height).toBeGreaterThanOrEqual(110);
+        expect(await page.evaluate(() => window.scrollY)).toBe(0);
+        expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBeLessThanOrEqual(844);
+    });
+}

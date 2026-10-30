@@ -17,8 +17,8 @@ export function contrastRatio(first: string, second: string): number {
     return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
 }
 
-export function buttonColors(accent: string) {
-    return {
+export function buttonColors(accent: string, scene = 'day') {
+    const colors = {
         ink: '#263547', light: '#fffefa', base: '#fff0d1',
         hoverLight: '#ffffff', hover: '#ffe5ab', character: '#ffebc9',
         selected: mixWithWhite(accent, .24),
@@ -28,4 +28,18 @@ export function buttonColors(accent: string) {
         correctInk: '#234a2a', correct: '#def3df',
         incorrectInk: '#754315', incorrect: '#fff0da', levelInk: '#835000'
     };
+    if (scene === 'night') return { ...colors, ink: '#f5f7ff', levelInk: '#ffe09a', light: '#243e62', base: '#172b4d', hoverLight: '#345071', hover: '#243e62', character: '#172b4d', selected: '#345071', actionInk: '#f5f7ff', actionLight: '#345071', action: '#243e62', actionHover: '#345071', disabledInk: '#d0d5df', disabled: '#303c51' };
+    if (scene === 'evening') return { ...colors, light: '#fff3e6', base: '#ffdfbb', character: '#ffdfbb' };
+    return colors;
+}
+
+/** Glass endpoints stay readable even over the brightest/darkest landscape. */
+export function sceneColors(scene: string) {
+    if (scene === 'night') return { ink: '#f5f7ff', panel: '#172b4d', heading: '#ffffff', outline: '#12203b' };
+    if (scene === 'evening') return { ink: '#43291f', panel: '#ffe3c7', heading: '#43291f', outline: '#fff7e9' };
+    return { ink: '#263547', panel: '#fff6e4', heading: '#263547', outline: '#fffaf0' };
+}
+export function glassOver(panel: string, background: string): string {
+    const behind = channels(background);
+    return `#${channels(panel).map((value, index) => Math.round(value * .94 + behind[index]! * .06).toString(16).padStart(2, '0')).join('')}`;
 }

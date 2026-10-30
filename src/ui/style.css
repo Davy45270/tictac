@@ -286,49 +286,7 @@ main[data-screen="result"] .guide svg {
         transition: none!important;
     }
 }
-@media(max-width:430px) {
-    main {
-        padding: 12px;
-    }
-    .clock-wrap {
-        width: 100%;
-        max-width: 300px;
-    }
-    .guide svg {
-        width: 96px;
-        min-width: 96px;
-        height: 96px;
-    }
-    .guide {
-        min-height: 96px;
-    }
-    #target {
-        font-size: 1.1rem;
-        margin: 8px 0;
-    }
-    .cast .character {
-        width: 104px;
-    }
-    .character svg {
-        height: 78px;
-    }
-    .levels {
-        gap: 8px;
-    }
-    .levels button {
-        font-size: .9rem;
-        padding: 8px;
-    }
-    .guide p {
-        margin: 8px 0;
-    }
-    .instruction {
-        margin: 12px 0;
-    }
-    .answers button {
-        font-size: .95rem;
-    }
-}
+
 .half-day {
     display: flex;
     justify-content: center;
@@ -350,57 +308,7 @@ small {
     display: inline;
     margin-right: 6px;
 }
-@media(max-width:430px) {
-    .half-day~.dots {
-        margin: 8px 0;
-    }
-    .half-day~.guide {
-        min-height: 96px;
-    }
-    .half-day~.guide svg {
-        height: 96px;
-    }
-    .half-day~.guide p {
-        font-size: .95rem;
-        padding: 10px;
-    }
-    .clock-wrap:has(+.half-day) .period {
-        font-size: .8rem;
-        height: 28px;
-    }
-    .clock-wrap:has(+.half-day) .period svg {
-        height: 28px;
-    }
-}
-@media(max-width:430px) {
-    main[data-current-level="6"][data-current-kind="set"][data-screen="exercise"] {
-        padding: 8px;
-    }
-    main[data-current-level="6"][data-current-kind="set"] .clock-wrap {
-        max-width: 280px;
-        position: relative;
-    }
-    main[data-current-level="6"][data-current-kind="set"] .period {
-        position: absolute;
-        top: 0;
-        right: -24px;
-        background: #fffaf0;
-        border-radius: 12px;
-    }
-    main[data-current-level="6"][data-current-kind="set"] .instruction {
-        font-size: 1.2rem;
-        margin: 8px 0;
-        line-height: 1.2;
-    }
-    main[data-current-level="6"][data-current-kind="set"] #target {
-        font-size: 1rem;
-        margin: 4px 0;
-        line-height: 1.2;
-    }
-    main[data-current-level="6"][data-current-kind="set"] .dots {
-        margin: 4px 0;
-    }
-}
+
 .half-day button svg {
     width: 32px;
     height: 24px;
@@ -409,7 +317,7 @@ small {
     margin-right: 4px;
 }
 
-/* Sunlit, rounded surfaces keep the same readable ink in every landscape. */
+/* Toy surfaces use tested colors supplied by the active guide and scene. */
 :root {
     font-family: ui-rounded, 'Arial Rounded MT Bold', 'Trebuchet MS', system-ui, sans-serif;
     color: #263547;
@@ -503,21 +411,134 @@ nav { font-size: .95rem; }
 @keyframes cloud-drift { to { transform: translateX(40px); } }
 @keyframes twinkle { to { opacity: .3; } }
 @keyframes star-arrive { from { opacity: 0; transform: translateY(12px) scale(.8) rotate(-8deg); } to { opacity: 1; transform: none; } }
-@media(max-width:430px) {
-    main { width: calc(100% - 16px); padding: 12px; margin: 8px auto; border-radius: 24px; }
-    .cast { gap: 7px; }
-    .cast .character { width: min(104px, calc((100% - 14px) / 3)); }
-    .character span { font-size: .88rem; }
-    .guide svg { min-width: 80px; width: 80px; }
-    .guide p { font-size: .92rem; padding: 10px; }
-    .dots { gap: 4px; }
-    .dots span { width: 22px; height: 24px; }
-    .levels button { overflow-wrap: anywhere; }
-    main[data-current-level="6"][data-current-kind="set"] .period { right: 0; }
-}
+
 @media(prefers-reduced-motion:reduce) {
     *,*::before,*::after { animation: none!important; transition: none!important; }
 }
 
 .answers .correct { color: var(--button-correctInk); background: var(--button-correct); }
 .answers .incorrect { color: var(--button-incorrectInk); background: var(--button-incorrect); }
+
+/* The landscape is the page; glass belongs to individual content groups. */
+@font-face {
+    font-family: Fredoka;
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('@fontsource/fredoka/files/fredoka-latin-500-normal.woff2') format('woff2');
+}
+@font-face {
+    font-family: Fredoka;
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('@fontsource/fredoka/files/fredoka-latin-700-normal.woff2') format('woff2');
+}
+:root { font-family: Fredoka, ui-rounded, sans-serif; font-weight: 500; }
+body { color: var(--scene-ink, #263547); }
+main { background: none; border: 0; box-shadow: none; padding: 8px; margin: 12px auto; }
+h1,h2,.instruction,.score,header p { color: inherit; font-weight: 700; }
+header,nav,main[data-screen="result"]>h1,footer,.language {
+    color: var(--scene-heading);
+    text-shadow: 0 1px 2px var(--scene-outline), 1px 0 var(--scene-outline), -1px 0 var(--scene-outline), 0 -1px var(--scene-outline);
+}
+header h1 { font-family: 'Trebuchet MS', sans-serif; }
+.glass,.guide p {
+    background: var(--scene-panel);
+    color: var(--scene-ink);
+    border: 1px solid #ffffff99;
+    border-radius: 22px;
+    box-shadow: inset 0 1px 0 #ffffff80, 0 5px 14px #14243b25;
+    padding: 10px;
+}
+@supports (backdrop-filter: blur(12px)) {
+    .glass,.guide p { background: color-mix(in srgb, var(--scene-panel) 94%, transparent); backdrop-filter: blur(12px); }
+}
+.guide-choice { margin: 20px 0; }
+.guide-choice h2 { margin: 0 0 10px; }
+fieldset.glass { margin: 20px 0; padding-top: 8px; }
+legend { background: var(--scene-panel); border-radius: 12px; padding: 4px 12px; }
+.cast .character { width: min(140px, calc((100% - 16px) / 3)); }
+.character svg { height: 96px; }
+.levels { margin-top: 20px; }
+.levels button { --level-color: #a4dfc2; }
+.levels button:nth-child(2) { --level-color: #ffd58f; }
+.levels button:nth-child(3) { --level-color: #a9d9fb; }
+.levels button:nth-child(4) { --level-color: #efb4d3; }
+.levels button:nth-child(5) { --level-color: #c6b9f3; }
+.levels button:nth-child(6) { --level-color: #9de3df; }
+.levels button:nth-child(7) { --level-color: #f6b49c; }
+.levels button:nth-child(8) { --level-color: #d6e99e; }
+.levels b { display: flex; align-items: center; gap: 6px; text-align: left; font-size: .9rem; }
+.level-number { display: inline-grid; place-items: center; flex: 0 0 42px; height: 42px; border-radius: 50%; font-style: normal; font-size: 1.5rem; background: var(--level-color); color: #263547; }
+.levels button:disabled .level-number { background: #d4d1cc; color: #49464b; }
+.level-lock { height: 20px; width: 20px; vertical-align: middle; }
+#clock { overflow: visible; filter: drop-shadow(0 9px 3px #16293655); }
+#clock text { font-family: Fredoka, sans-serif; font-weight: 700; }
+#clock text.cardinal { font-size: 30px; }
+#digital { width: fit-content; min-width: 100px; margin: 8px auto 0; padding: 2px 12px; border: 3px solid #44606a; border-radius: 12px; background: #e0ece1; color: #243e42; text-shadow: none; font-size: 1.3rem; line-height: 1.2; box-shadow: inset 0 2px 4px #193c4933; }
+.guide svg { width: 120px; min-width: 120px; height: 120px; filter: drop-shadow(0 5px 2px #183e4633); }
+.guide p { font-size: .95rem; margin: 4px 0; }
+main[data-screen="result"] .guide svg { width: 180px; min-width: 180px; height: 180px; }
+body[data-scene="night"] :focus-visible { outline-color: #ffd968; }
+body[data-scene="night"] .period { color: #263547; }
+.period { background: #fff6e4; border-radius: 12px; width: fit-content; margin: 4px auto 0; padding: 0 8px; color: #263547; font-size: .9rem; }
+.period svg { width: 28px; height: 28px; }
+main[data-screen="exercise"] { max-width: 600px; }
+.prompt { margin: 10px 0 20px; }
+.prompt .instruction { margin: 0; font-size: 1.25rem; line-height: 1.15; }
+.prompt #target { margin: 4px 0 0; font-size: 1rem; }
+.prompt>p { margin: 4px 0 0; }
+@media(max-width:430px) {
+    main { width: calc(100% - 12px); padding: 4px; margin: 6px auto; }
+    .character svg { height: 88px; }
+    .cast .character { width: calc((100% - 14px) / 3); }
+    .levels b { flex-direction: column; text-align: center; }
+    .levels button { overflow-wrap: normal; }
+    main[data-screen="exercise"],main[data-current-level="6"][data-current-kind="set"][data-screen="exercise"] { padding: 4px; }
+    main[data-screen="exercise"] nav { gap: 10px; min-height: 48px; font-size: .85rem; }
+    main[data-screen="exercise"] .clock-wrap { width: 280px; max-width: 280px; position: relative; }
+    main[data-screen="exercise"] .prompt { padding: 8px; margin: 8px 0 18px; }
+    main[data-screen="exercise"] .instruction { font-size: 1.15rem; margin: 0; }
+    main[data-screen="exercise"] #target { margin: 4px 0 0; line-height: 1.15; font-size: .95rem; }
+    main[data-screen="exercise"] .guide { min-height: 120px; gap: 2px; }
+    main[data-screen="exercise"] .guide svg { width: 120px; min-width: 120px; height: 120px; }
+    main[data-screen="exercise"] .guide p { padding: 8px; font-size: .9rem; }
+    main[data-screen="exercise"] .dots { margin: 8px 0; gap: 4px; }
+    main[data-screen="exercise"] .answers { gap: 8px; padding: 8px; }
+    main[data-screen="exercise"] .answers button { min-height: 64px; padding: 6px; font-size: .95rem; line-height: 1.2; }
+    main[data-screen="exercise"] .half-day { margin: 6px 0; gap: 8px; }
+    main[data-screen="exercise"] .half-day button { min-height: 48px; padding: 2px 6px; font-size: .85rem; }
+    main[data-screen="exercise"] .half-day button svg { width: 24px; height: 18px; }
+    main[data-screen="exercise"] .clock-wrap .period { position: static; font-size: .8rem; height: 26px; }
+    main[data-screen="exercise"] #listen { margin: 8px auto; }
+}
+.dots span { color: #263547; }
+body[data-scene="night"] button,body[data-scene="night"] select { box-shadow: inset 0 1px 0 #ffffff30, 0 4px 0 #08152b66; }
+body[data-scene="night"] button[aria-pressed=true] { border-color: #ffe09a; }
+body[data-scene="night"] .levels button:disabled .level-number { color: #263547; }
+@media(max-width:430px) {
+    main[data-screen="exercise"] .prompt { padding: 6px; margin: 6px 0 16px; }
+    main[data-screen="exercise"] .clock-wrap { display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+    main[data-screen="exercise"] #clock { grid-column: 1/-1; }
+    main[data-screen="exercise"] #digital { grid-column: 1/-1; font-size: 1.15rem; margin-top: 8px; }
+    main[data-screen="exercise"] .clock-wrap:has(.period) #digital { grid-column: 1; }
+    main[data-screen="exercise"] .clock-wrap .period { grid-column: 2; margin-top: 8px; padding: 0 4px; }
+    main[data-screen="exercise"] .dots { margin: 4px 0; }
+    main[data-screen="exercise"] .answers button { min-height: 58px; }
+    main[data-screen="exercise"] nav span { flex: 1; min-width: 0; }
+    main[data-screen="exercise"] nav #listen { margin: 0; padding: 6px; font-size: .85rem; }
+}
+.score { color: var(--scene-heading); text-shadow: 0 1px 2px var(--scene-outline), 1px 0 var(--scene-outline), -1px 0 var(--scene-outline), 0 -1px var(--scene-outline); }
+@media(max-width:430px) {
+    main[data-screen="exercise"] { margin-block: 2px; }
+    main[data-screen="exercise"] .prompt { margin-bottom: 12px; }
+    main[data-screen="exercise"] .dots { margin-block: 2px; }
+    main[data-screen="exercise"] #digital,main[data-screen="exercise"] .clock-wrap .period { margin-top: 4px; }
+    main[data-screen="exercise"] .answers button { font-size: .9rem; }
+}
+@media(max-width:430px) {
+    main[data-screen="exercise"] { margin-block: 0; }
+    main[data-screen="exercise"] .prompt { margin-bottom: 10px; }
+    main[data-screen="exercise"] .answers { padding: 6px; gap: 6px; }
+}
