@@ -58,9 +58,8 @@ export function characterSvg(id: CharacterId, expression: Expression = 'joie', a
         body += path('M106 184 L108 211 M138 184 L139 211', 'none', 11, '#a36a49');
         body += path('M78 166 Q120 183 163 166 L177 180 Q163 192 150 183 Q136 197 121 187 Q105 197 92 187 Q75 192 65 180Z', pink, 2);
         body += path('M78 170 Q120 186 163 170 L185 190 Q169 201 155 194 Q141 207 126 198 Q110 208 96 198 Q78 203 57 191Z', pink);
-        for (const x of [82, 100, 120, 140, 158]) body += path(`M${x} 180 l${x<120 ? -5 : 5} 13`, 'none', 2, '#fff0ed');
-        body += path('M72 184 Q83 191 93 186 M104 192 q10 5 18 0 M137 192 q9 1 15 -4', 'none', 2, '#ffe8f1');
-        body += path('M106 196 l4 10 -6 4 m34 -14 -3 10 6 4', 'none', 2, '#ffd1e2');
+        for (const x of [82, 100, 120, 140, 158]) body += path(`M${x} 179 Q${x} 188 ${x + (x < 120 ? -6 : 6)} 195`, 'none', 3, '#bd5c89');
+        body += path('M83 173 Q120 185 157 173', 'none', 2.5, '#ffe8f1');
         body += path('M82 171 Q120 183 160 171', 'none', 4, '#a74275');
     }
     if (monkey) body += path('M102 156 Q74 163 55 150 M139 156 Q167 159 184 149', 'none', 12, '#a36a49') + ellipse(53, 149, 10, 8, cream, 2) + ellipse(186, 149, 10, 8, cream, 2);
@@ -85,7 +84,7 @@ export function characterSvg(id: CharacterId, expression: Expression = 'joie', a
     head += `<g clip-path="${url('head')}">${path('M171 58 Q198 129 131 151 Q96 161 64 134 L56 163 204 170 205 52Z', url('shade'), 0)}${path('M59 103 Q52 56 108 48', 'none', 3, '#fff4dc')}</g>`;
     if (!dragon && !unicorn) {
         head += path('M93 56 l10 -3 -5 7 12 -5 -4 9 12 -8', 'none', 1.8, '#fff0d4');
-        body += path('M101 151 l7 -4 -3 8 10 -5 -3 9 10 -5', 'none', 1.8, '#fff0d4');
+
     }
     body += path('M143 184 Q153 177 154 165 Q167 200 138 207 L129 210Z', url('shade'), 0);
     body += path('M89 145 Q82 162 86 177', 'none', 2.5, '#fff1d9');
@@ -116,13 +115,13 @@ export function characterSvg(id: CharacterId, expression: Expression = 'joie', a
             const look = e === 'concentre' ? 5 : 0;
             face += ellipse(x+look, 103, e === 'surprise' ? 10 : 13, e === 'surprise' ? 15 : 18, url('iris'), 1.2) + ellipse(x+look+1, 105, 8, 13, '#392e35', 0);
             face += path(`M${x+look-8} 115 Q${x+look} 124 ${x+look+8} 115 Q${x+look} 119 ${x+look-8} 115Z`, unicorn ? '#a7f3f3' : '#ffd080', 0);
-            if (e === 'concentre') face += path(`M${x-19} ${x<120?86:93} L${x+18} ${x<120?97:84} Q${x} 70 ${x-19} ${x<120?86:93}Z`, coat, 1.5);
+            if (e === 'concentre') face += path(panda || red ? `M${x-19} 88 Q${x} 85 ${x+18} 90 Q${x} 70 ${x-19} 88Z` : `M${x-19} ${x<120?86:93} L${x+18} ${x<120?97:84} Q${x} 70 ${x-19} ${x<120?86:93}Z`, coat, 1.5);
             if (monkey || unicorn) face += path(`M${x-18} 84 l-7 -7 m9 4 -4 -8 m35 11 6 -7`, 'none', 2.5);
             face += ellipse(x+look-4, 97, 4, 5, '#ffffff', 0) + ellipse(x+look+4, 109, 2, 2.5, '#ffffff', 0);
             face += path(`M${x-20} 87 Q${x} 66 ${x+20} 87 M${x-18} 82 l-5 -5 M${x+17} 81 l4 -5`, 'none', 4);
         }
         const left = x < 120;
-        face += path(e === 'triste' ? `M${x-13} ${left?77:70} Q${x} 68 ${x+13} ${left?70:77}` : e === 'concentre' ? `M${x-13} ${left?73:81} L${x+12} ${left?82:73}` : `M${x-12} 69 Q${x} ${e==='surprise'?57:62} ${x+12} 69`, 'none', 3);
+        face += path(e === 'triste' ? `M${x-13} ${left?77:70} Q${x} 68 ${x+13} ${left?70:77}` : e === 'concentre' ? (panda || red ? `M${x-13} ${left?74:77} Q${x} 73 ${x+12} ${left?77:74}` : `M${x-13} ${left?73:81} L${x+12} ${left?82:73}`) : `M${x-12} 69 Q${x} ${e==='surprise'?57:62} ${x+12} 69`, 'none', 3);
         face += ellipse(x-5, 124, 19, 11, url('blush'), 0);
     }
     if (e === 'triste') face += path('M166 117 C162 126 157 132 163 136 C176 142 178 130 166 117Z', '#88d9ed', 1.2, '#4a9cbb') + ellipse(164, 129, 2, 3, '#ffffff', 0);
@@ -166,7 +165,6 @@ export function characterSvg(id: CharacterId, expression: Expression = 'joie', a
         props += ellipse(166,65,6,6,gold,1.5);
     }
     if (unicorn) props += star(157, 177, 19) + star(200, 116, 8) + star(45, 155, 7) + path('M197 96 v9 m-4 -4 h8 M37 135 v8 m-4 -4 h8 M207 167 v10 m-5 -5 h10', 'none', 1.5, '#fff3ac');
-    if (panda || red) body += path('M98 158 l-5 8 9 -2 -3 10 M118 183 l-4 8 7 -2 -2 8', 'none', 1.4, panda ? '#d3c5b1' : '#f5be88');
     // Small specular marks on the paws and belly reinforce the shared light source.
     body += path('M91 151 Q89 164 94 171 M68 145 Q65 151 67 158', 'none', 2.5, '#ffe9d8');
     const movement = motion === 'reduce' ? '' : animation === 'special' ? '<animateTransform attributeName="transform" type="rotate" values="-4 120 180;4 120 180;-4 120 180" dur="4s" repeatCount="indefinite"/>' : `<animateTransform attributeName="transform" type="translate" values="0 0;0 ${animation === 'saut' ? -12 : animation === 'celebration' ? -7 : animation === 'marche' ? -4 : -2};0 0" dur="${animation === 'repos' ? 4.8 : 2.8}s" repeatCount="indefinite"/>`;
