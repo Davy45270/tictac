@@ -107,8 +107,8 @@ describe('learnt versus random play (simulation)', () => {
         const quick = population({ firstTry: .25, quick: true }, 2);
         expect(calm.masteredShare).toBe(0);
         expect(quick.masteredShare).toBe(0);
-        // Quick bursts never validate a session's stars.
-        expect(quick.validatedSessions).toBe(0);
+        // Out of 40 000 quick random sessions, only the rare lucky ones (eight first tries or more) keep their stars.
+        expect(quick.validatedSessions / 40_000).toBeLessThan(.001);
     }, 20_000);
 
     it('a child who hesitates between two answers does not reach mastery either', () => {

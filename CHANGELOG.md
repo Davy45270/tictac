@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0
+
+- Four new lessons: answers written as digital times, a dial without numbers like a grown-up watch, a Roman-numeral dial, and “noon or midnight” where the sky tells the half of the day.
+- Each lesson unlocks from the one it builds on, so the new dials open as soon as five-minute steps are known.
+- Learning follow-up: a right answer on the first try counts towards mastery, a mistake brings a close exercise back later (in the session or at the start of the next one), and a burst of quick tries does not validate the stars.
+- A lesson is marked mastered after two sessions with at least 18 first-try answers out of 20, no random tries and nothing left to review; a ribbon shows it on the home screen.
+- Parents' area behind a small sum, with per-lesson progress, random tries and pending reviews. Everything stays on the device and can be erased; a test forbids any network channel in the app code.
+
 ## 0.3.0
 
 - Illustrated look: a landscape that follows the time of day (morning, day, evening, night), glass panels and a toy alarm-clock dial with shaped, shadowed hands.

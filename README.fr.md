@@ -9,7 +9,9 @@ Un jeu doux pour apprendre à lire l’heure de 5 à 9 ans. L’enfant déplace 
 
 [Jouer en ligne](https://davy45270.github.io/tictac/).
 
-Huit niveaux : heures pleines, demies, quarts, tranches de cinq minutes, minute près, format 24 h, calcul « dans quelques minutes », moments de la journée. Les niveaux 1 à 7 proposent de lire et de régler. Chaque série compte dix questions ; deux étoiles débloquent le niveau suivant. Après une erreur, on peut réessayer tranquillement.
+Douze niveaux : heures pleines, demies, quarts, tranches de cinq minutes, minute près, format 24 h, calcul « dans quelques minutes », moments de la journée, réponses en chiffres, cadran sans chiffres, chiffres romains, midi ou minuit. La plupart proposent de lire et de régler. Chaque série compte dix questions ; deux étoiles débloquent les niveaux qui s’appuient dessus. Après une erreur, on peut réessayer tranquillement, et un exercice proche revient plus tard.
+
+Un espace parents (derrière une petite multiplication) indique pour chaque leçon si elle est acquise : deux séries récentes avec au moins 18 réponses sur 20 justes du premier coup, aucune rafale d’essais au hasard et plus rien à revoir. Il reste sur l’appareil.
 
 ## Captures d’écran
 
@@ -44,6 +46,6 @@ Les tests unitaires vérifient le moteur pur, les séries, les textes, la sauveg
 
 ## Vie privée
 
-Tout progrès reste sur le téléphone, avec la langue et le guide choisis. Aucune collecte, aucun traceur, aucune publicité ni requête applicative de données. Seuls les fichiers statiques et le service worker sont téléchargés pour installer le jeu. Le bouton Écouter utilise la synthèse vocale du navigateur ; seules les voix locales de la langue choisie sont utilisées, et le bouton est masqué si aucune n’est disponible.
+Tout progrès reste sur le téléphone, avec le suivi des parents, la langue et le guide choisis. Aucune collecte, aucun traceur, aucune publicité ni requête applicative de données. Seuls les fichiers statiques et le service worker sont téléchargés pour installer le jeu. Le bouton Écouter utilise la synthèse vocale du navigateur ; seules les voix locales de la langue choisie sont utilisées, et le bouton est masqué si aucune n’est disponible.
 
 Licence MIT © 2026 David Sevin — [LICENSE](LICENSE).

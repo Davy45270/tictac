@@ -70,6 +70,53 @@ test('set five-minute steps after dragging the minute hand', async ({ page, cont
     await capture(page, 'set');
 });
 
+async function advanced(page: Page): Promise<void> {
+    await page.evaluate(() => localStorage.setItem('tictac.v1', JSON.stringify({
+        version: 1, locale: 'fr', guide: 'panda', records: {
+            '1.read': 10, '2.read': 9, '3.read': 9, '4.read': 9, '5.read': 8, '6.read': 9, '7.read': 7, '8.read': 9, '9.read': 9, '10.read': 7
+        },
+        mastery: {
+            '1.read': { recent: 'ssssssssssssssssssss', sessions: 3, last: '2026-06-20' },
+            '2.read': { recent: 'sssssssssssssssssrss', sessions: 2, last: '2026-06-20' },
+            '3.read': { recent: 'ssrssssssgsssssssss', sessions: 2, last: '2026-06-21' },
+            '4.read': { recent: 'srsrsssssrsss', sessions: 2, last: '2026-06-21' },
+            '9.read': { recent: 'ssggsrsssr', sessions: 1, last: '2026-06-21' }
+        },
+        reviews: { '4.read': [{ h: 3, m: 45 }] }
+    })));
+    await page.reload();
+}
+
+test('roman numerals dial', async ({ page }) => {
+    await advanced(page);
+    await page.locator('[data-level="11"]').click();
+    await expect(page.locator('#clock text')).toHaveCount(12);
+    await capture(page, 'roman');
+});
+
+test('noon or midnight under the night sky', async ({ page }) => {
+    await advanced(page);
+    await page.locator('[data-level="12"]').click();
+    // Advance to the first midnight question so the night sky shows.
+    for (let i = 0; i < 9 && (await state(page)).scene !== 'night'; i++) {
+        const question = (await state(page)).question!;
+        await page.locator('[data-answer]').nth(question.answer).click();
+        await page.locator('#continue').click();
+    }
+    await expect(page.locator('body')).toHaveAttribute('data-scene', 'night');
+    await capture(page, 'noon');
+});
+
+test('parents follow-up', async ({ page }) => {
+    await advanced(page);
+    await page.locator('#parents').click();
+    const operands = page.locator('[data-a]');
+    await page.locator('#gate-answer').fill(String(Number(await operands.getAttribute('data-a')) * Number(await operands.getAttribute('data-b'))));
+    await page.locator('#gate-enter').click();
+    await expect(page.locator('[data-key="1.read"]')).toHaveAttribute('data-state', 'mastered');
+    await capture(page, 'parents');
+});
+
 test.describe('completed session', () => {
     test.use({ reducedMotion: 'reduce' });
     test('ten correct answers earn three stars', async ({ page }) => {

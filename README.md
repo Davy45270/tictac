@@ -9,7 +9,9 @@ A gentle, French-first clock game for children aged 5–9. Drag real analog cloc
 
 [Play online](https://davy45270.github.io/tictac/).
 
-Eight levels: whole hours, half hours, quarter hours, five-minute steps, exact minutes, 24-hour time, adding minutes, and parts of the day. Levels 1–7 offer reading and setting exercises. Ten questions make a session. Earn two stars to unlock the next level; mistakes invite another try without pressure.
+Twelve levels: whole hours, half hours, quarter hours, five-minute steps, exact minutes, 24-hour time, adding minutes, parts of the day, answers in digits, a dial without numbers, Roman numerals, and noon or midnight. Most levels offer reading and setting exercises. Ten questions make a session. Earn two stars to unlock the levels that build on it; mistakes invite another try without pressure, and a close exercise comes back later.
+
+A parents' area (behind a small multiplication) shows, for each lesson, whether it is mastered: two recent sessions with at least 18 answers out of 20 right on the first try, no burst of random tries and nothing left to review. It stays on the device.
 
 Use your browser’s install / Add to Home Screen action to install the PWA. After the first complete online visit, the game works offline. All artwork is procedural SVG; the app’s only PNG assets are the reproducible PWA icons.
 
@@ -44,6 +46,6 @@ Unit tests cover the pure engine, generation, language, persistence, characters 
 
 ## Privacy
 
-Progress, language and guide selection stay in `localStorage` on this device. No analytics, advertising, trackers or application data requests. The initial installation downloads the static app and service worker; no personal data is sent by the game. The optional Listen button uses the browser’s speech synthesis. Only local voices matching the interface language are used; the button is hidden when none are available.
+Progress, the parents' follow-up, language and guide selection stay in `localStorage` on this device. No analytics, advertising, trackers or application data requests. The initial installation downloads the static app and service worker; no personal data is sent by the game. The optional Listen button uses the browser’s speech synthesis. Only local voices matching the interface language are used; the button is hidden when none are available.
 
 MIT © 2026 David Sevin. See [LICENSE](LICENSE).

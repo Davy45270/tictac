@@ -160,7 +160,10 @@ function submit(correct: boolean, confused?: Time): void {
     outcomes.push(outcome);
     submissions = [];
     const key = recordKey(level, kind);
-    if (question.review && outcome === 'sure') setReviews(key, reviewsOf(key).filter(t => !sameTime(t, question.target)));
+    if (question.review && outcome === 'sure' && reviewsOf(key).some(t => sameTime(t, question.target))) {
+        setReviews(key, reviewsOf(key).filter(t => !sameTime(t, question.target)));
+        persist();
+    }
     const solved = question;
     const digital = root.querySelector('#digital');
     if (digital) {
