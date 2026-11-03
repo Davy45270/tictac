@@ -590,3 +590,48 @@ body[data-scene="night"] .period svg { filter: brightness(0) invert(1); }
 @media(prefers-reduced-motion:reduce) {
     .answer-sparkles { display: none; }
 }
+
+/* Lessons on reading styles: digit answers, numberless and Roman dials. */
+.levels button:nth-child(9) { --level-color: #b9e3a8; }
+.levels button:nth-child(10) { --level-color: #f3c7a0; }
+.levels button:nth-child(11) { --level-color: #c9d2f7; }
+.levels button:nth-child(12) { --level-color: #f5d76e; }
+.level-ribbon { position: absolute; top: -10px; right: 6px; width: 28px; height: 35px; filter: drop-shadow(0 2px 1px #5b3a1f40); }
+#clock text.roman { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 21px; letter-spacing: -1px; }
+#clock text.roman.cardinal { font-size: 25px; }
+.answers button.digits { font-size: 1.45rem; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.target-digits { display: inline-block; font-size: 1.6rem; font-variant-numeric: tabular-nums; padding: 0 10px; border-radius: 10px; background: #e0ece1; color: #243e42; border: 2px solid #44606a; }
+.review-badge { display: flex; align-items: center; justify-content: center; gap: 6px; width: fit-content; margin: 0 auto 6px; padding: 2px 10px; border-radius: 999px; background: #fff1c2; color: #6b4210; font-size: .85rem; font-weight: 700; }
+.review-badge svg { width: 18px; height: 18px; }
+.parents-link { text-shadow: none; display: block; margin: 0 auto 10px; min-height: 48px; font-size: .9rem; }
+
+/* Parents' follow-up: plain, readable, local. */
+main[data-screen="parents"] { max-width: 640px; }
+.parents-gate,.parents { margin-top: 12px; }
+.parents-gate form { display: grid; gap: 12px; justify-items: center; text-align: center; }
+.parents-gate input { font: inherit; width: 8ch; min-height: 56px; text-align: center; font-size: 1.4rem; border-radius: 14px; border: 2px solid #b48b5a; }
+.parents h1,.parents-gate h1 { font-size: 1.6rem; margin: 4px 0 8px; }
+.parents-summary { margin: 0 0 8px; font-weight: 700; }
+.parents-rule { margin: 0 0 10px; font-size: .9rem; }
+.parents-rule summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.parents-rule p { text-align: left; font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; font-size: .8rem; margin: 0 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; }
+.legend i,.meter i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; }
+.o-s { background: #2f8f53; }
+.o-r { background: #e2a33b; }
+.o-g { background: #c4455a; background-image: repeating-linear-gradient(45deg, #ffffff60 0 2px, transparent 2px 5px); }
+.follow-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.follow { padding: 8px 10px; border-radius: 16px; background: #ffffffa8; color: #263547; }
+.follow-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; }
+.follow-head b { flex: 1 1 160px; font-size: .95rem; }
+.follow-kind { font-size: .8rem; padding: 1px 8px; border-radius: 999px; background: #eef1f4; }
+.badge { font-size: .8rem; padding: 2px 10px; border-radius: 999px; font-weight: 700; }
+.badge-new { background: #eceae4; color: #4b4a47; }
+.badge-learning { background: #ffe9b3; color: #6b4210; }
+.badge-mastered { background: #cdeed6; color: #1f5a33; }
+.meter { display: flex; gap: 2px; margin: 6px 0 2px; flex-wrap: wrap; }
+.follow-facts { display: flex; flex-wrap: wrap; gap: 2px 12px; justify-content: flex-start; margin: 4px 0 0; font-size: .8rem; text-align: left; font-weight: 500; }
+.privacy { font-size: .85rem; }
+#erase { display: block; margin: 8px auto 4px; min-height: 48px; }
+#erase.confirm { border-color: #a23b3b; color: #7c1f1f; background: #ffe3e0; }

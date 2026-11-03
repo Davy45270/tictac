@@ -1,3 +1,4 @@
+import { levelInfo } from '../engine/levels';
 import type { Time } from '../engine/time';
 
 export type Scene = 'morning' | 'day' | 'evening' | 'night';
@@ -5,7 +6,8 @@ export function sceneForTime(time: Time): Scene {
     return time.h < 6 ? 'night' : time.h < 12 ? 'morning' : time.h < 18 ? 'day' : 'evening';
 }
 export function chooseScene(level: number, displayed: Time, now: Date, exercise = true): Scene {
-    return sceneForTime(exercise && (level === 6 || level === 8) ? displayed : { h: now.getHours(), m: now.getMinutes() });
+    if (exercise && levelInfo(level).answers === 'twins') return displayed.h === 23 || displayed.h < 6 ? 'night' : 'day';
+    return sceneForTime(exercise && levelInfo(level).sky ? displayed : { h: now.getHours(), m: now.getMinutes() });
 }
 
 /** Decorative landscape; all interaction belongs to the foreground. */

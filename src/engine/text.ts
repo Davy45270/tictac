@@ -1,4 +1,4 @@
-import { levelInfo } from './levels';
+import { levelInfo, moment } from './levels';
 import type { Question } from './session';
 import type { Time } from './time';
 
@@ -15,7 +15,8 @@ function number(n: number, locale: Locale): string {
     return prefix + (unit ? (locale === 'fr' && unit === 1 ? ' et un' : '-' + (words[unit] ?? '')) : '');
 }
 
-export function say(t: Time, locale: Locale = 'fr', style: Style = '12'): string {
+/** `named` makes English say noon and midnight where it would say twelve (French always does). */
+export function say(t: Time, locale: Locale = 'fr', style: Style = '12', named = false): string {
     if (style === '24' && locale === 'fr') {
         const hour = t.h === 0 ? 'minuit' : t.h === 12 ? 'midi' : `${t.h === 21 ? 'vingt et une' : number(t.h, locale)} heure${t.h === 1 ? '' : 's'}`;
         return hour + (t.m ? ' ' + number(t.m, locale) : '');
@@ -31,7 +32,7 @@ export function say(t: Time, locale: Locale = 'fr', style: Style = '12'): string
         return base(h) + ' ' + number(t.m, locale);
     }
     if (!t.m) return h ? `${base(h)} o'clock` : base(h);
-    const hourWord = (hour: number): string => number(hour || 12, 'en');
+    const hourWord = (hour: number): string => hour || !named ? number(hour || 12, 'en') : t.h === 0 || t.h === 23 ? 'midnight' : 'noon';
     if (t.m === 30) return `half past ${hourWord(h)}`;
     return `${t.m === 15 || t.m === 45 ? 'quarter' : number(t.m > 30 ? 60 - t.m : t.m, locale)} ${t.m > 30 ? 'to' : 'past'} ${hourWord(t.m > 30 ? (h + 1) % 12 : h)}`;
 }
@@ -44,5 +45,16 @@ export function spokenPrompt(question: Question, locale: Locale): string {
         return `${instruction} ${locale === 'fr' ? 'Départ' : 'Start'} : ${say(question.start, locale)}.`;
     }
     if (question.kind === 'read') return instruction;
-    return `${instruction} ${say(question.target, locale, question.level === 6 ? '24' : '12')}`;
+    return `${instruction} ${levelInfo(question.level).answers === 'digits' ? formatDigital(question.target) : say(question.target, locale, question.level === 6 ? '24' : '12')}`;
+}
+
+/** Text of one proposal, as the level writes it. */
+export function answerLabel(time: Time, level: number, locale: Locale): string {
+    switch (levelInfo(level).answers) {
+        case 'moments': return moment(time)[locale];
+        case 'clock24': return `${formatDigital(time, '24')}<small>${say(time, locale, '24')}</small>`;
+        case 'twins': return `${formatDigital(time, '24')}<small>${say(time, locale, '12', true)}</small>`;
+        case 'digits': return formatDigital(time);
+        default: return say(time, locale);
+    }
 }

@@ -1,37 +1,64 @@
 import type { Step, Time } from './time';
 
 export type Kind = 'read' | 'set';
+/** How the dial prints its hours: digits, nothing (like a grown-up watch) or Roman numerals. */
+export type Dial = 'arabic' | 'none' | 'roman';
+/** How the four proposals are written. */
+export type Answers = 'words' | 'clock24' | 'moments' | 'digits' | 'twins';
 
-const catalog: { step: Step; fr: string; en: string }[] = [
-    { step: 60, fr: 'Heures pleines', en: 'On the hour' },
-    { step: 30, fr: 'Les demies', en: 'Half hours' },
-    { step: 15, fr: 'Les quarts', en: 'Quarter hours' },
-    { step: 5, fr: 'De cinq en cinq', en: 'Five-minute steps' },
-    { step: 1, fr: 'Chaque minute', en: 'Every minute' },
-    { step: 5, fr: 'Les 24 heures', en: '24-hour time' },
-    { step: 5, fr: 'Dans quelques minutes', en: 'In a few minutes' },
-    { step: 5, fr: 'Ma journée', en: 'My day' }
+interface Entry {
+    step: Step;
+    fr: string;
+    en: string;
+    /** Size of the target domain: 12 hours on the dial or the whole day. */
+    hours: 12 | 24;
+    dial: Dial;
+    answers: Answers;
+    /** Only reading questions (the child classifies, there is nothing to set). */
+    readOnly: boolean;
+    /** The landscape follows the dial and a sun or moon cue is shown. */
+    sky: boolean;
+    /** Level whose two stars unlock this one (0 for the first level). */
+    requires: number;
+}
+
+const entry = (step: Step, fr: string, en: string, more: Partial<Entry> = {}): Entry => ({
+    step, fr, en, hours: 12, dial: 'arabic', answers: 'words', readOnly: false, sky: false, requires: 0, ...more
+});
+
+const catalog: Entry[] = [
+    entry(60, 'Heures pleines', 'On the hour'),
+    entry(30, 'Les demies', 'Half hours', { requires: 1 }),
+    entry(15, 'Les quarts', 'Quarter hours', { requires: 2 }),
+    entry(5, 'De cinq en cinq', 'Five-minute steps', { requires: 3 }),
+    entry(1, 'Chaque minute', 'Every minute', { requires: 4 }),
+    entry(5, 'Les 24 heures', '24-hour time', { hours: 24, answers: 'clock24', sky: true, requires: 5 }),
+    entry(5, 'Dans quelques minutes', 'In a few minutes', { hours: 24, requires: 6 }),
+    entry(5, 'Ma journée', 'My day', { hours: 24, answers: 'moments', readOnly: true, sky: true, requires: 7 }),
+    entry(5, 'En chiffres', 'In digits', { answers: 'digits', requires: 4 }),
+    entry(5, 'Sans chiffres', 'No numbers', { dial: 'none', answers: 'digits', requires: 9 }),
+    entry(5, 'Chiffres romains', 'Roman numerals', { dial: 'roman', requires: 9 }),
+    entry(5, 'Midi ou minuit', 'Noon or midnight', { hours: 24, answers: 'twins', readOnly: true, sky: true, requires: 6 })
 ];
 
-export const levels = catalog.map((info, index) => ({
-    ...info,
-    instructions: {
-        fr: {
-            read: index === 7 ? 'À quel moment de la journée ?' : index === 6 ? 'Dans {n} minutes, il sera…' : 'Quelle heure est-il ?',
-            set: index === 6 ? 'Dans {n} minutes, il sera…' : 'Règle l’horloge sur…'
-        },
-        en: {
-            read: index === 7 ? 'What part of the day is it?' : index === 6 ? 'In {n} minutes it will be…' : 'What time is it?',
-            set: index === 6 ? 'In {n} minutes it will be…' : 'Set the clock to…'
-        }
-    }
-}));
+function instructions(index: number): { fr: Record<Kind, string>; en: Record<Kind, string> } {
+    if (index === 7) return { fr: { read: 'À quel moment de la journée ?', set: 'À quel moment de la journée ?' }, en: { read: 'What part of the day is it?', set: 'What part of the day is it?' } };
+    if (index === 6) return { fr: { read: 'Dans {n} minutes, il sera…', set: 'Dans {n} minutes, il sera…' }, en: { read: 'In {n} minutes it will be…', set: 'In {n} minutes it will be…' } };
+    if (index === 11) return { fr: { read: 'Midi ou minuit ? Regarde le ciel !', set: 'Midi ou minuit ? Regarde le ciel !' }, en: { read: 'Noon or midnight? Look at the sky!', set: 'Noon or midnight? Look at the sky!' } };
+    return { fr: { read: 'Quelle heure est-il ?', set: 'Règle l’horloge sur…' }, en: { read: 'What time is it?', set: 'Set the clock to…' } };
+}
+
+export const levels = catalog.map((info, index) => ({ ...info, instructions: instructions(index) }));
+export const LEVEL_COUNT = levels.length;
 
 export function levelInfo(level: number): (typeof levels)[number] {
     const info = levels[level - 1];
-    if (!info) throw new RangeError('Level must be 1–8');
+    if (!info) throw new RangeError(`Level must be 1–${LEVEL_COUNT}`);
     return info;
 }
+
+/** Digital display style: the whole day where the half of the day matters. */
+export const digitalStyle = (level: number): '12' | '24' => levelInfo(level).sky ? '24' : '12';
 
 // Half-open, disjoint ranges cover all 24 hours; noon is a separate lesson-eight moment.
 export const moments = [

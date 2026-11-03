@@ -2,13 +2,13 @@ import { test, expect, state } from './helpers';
 import { hourAngle, minuteAngle } from '../../src/engine/time';
 import { makeRng } from '../../src/engine/session';
 
-for (const level of [1, 4, 5, 6]) {
+for (const level of [1, 4, 5, 6, 10, 11]) {
     test(`noisy finger session: level ${level}, ten perfect answers without scrolling`, async ({
         page, context
     }) => {
         await page.addInitScript(() => localStorage.setItem('tictac.v1', JSON.stringify({
             version: 1, locale: 'fr', guide: 'panda', records: {
-                '1.read': 9, '2.read': 9, '3.read': 9, '4.read': 9, '5.read': 9
+                '1.read': 9, '2.read': 9, '3.read': 9, '4.read': 9, '5.read': 9, '9.read': 9
             }
         })));
         await page.goto('/');

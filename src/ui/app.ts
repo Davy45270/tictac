@@ -1,9 +1,11 @@
 import { ids, characters, type Expression } from '../characters/model';
 import { characterSvg } from '../characters/svg';
-import { levels, levelInfo, moment, dayPeriod, type Kind } from '../engine/levels';
-import { generateSession, matchesSetting, type Question } from '../engine/session';
-import type { Time } from '../engine/time';
-import { formatDigital, say, spokenPrompt, type Locale } from '../engine/text';
+import { levels, levelInfo, dayPeriod, digitalStyle, type Kind } from '../engine/levels';
+import { generateSession, matchesSetting, nearQuestion, reviewQuestion, type Question } from '../engine/session';
+import { sameTime, type Time } from '../engine/time';
+import { answerLabel, formatDigital, say, spokenPrompt, type Locale } from '../engine/text';
+import { questionOutcome, sessionValidates, recordSession, masteryState, localDay, RAPID_MS, MAX_REVIEWS, type Outcome, type Submission } from '../engine/mastery';
+import { parentsHtml, gateHtml, makeGate, type Gate } from './parents';
 import { answer, stars, recordBest, unlocked, recordKey, type Attempt } from '../engine/progress';
 import { readSave, writeSave, browserStorage } from '../shell/storage';
 import { clockSvg, wireClock } from './clock';
@@ -13,7 +15,7 @@ import { buttonColors, sceneColors } from './contrast';
 const root = document.querySelector<HTMLElement>('#app')!;
 const storage = browserStorage();
 const save = readSave(storage, navigator.language.startsWith('en') ? 'en' : 'fr');
-let screen: 'home' | 'exercise' | 'result' = 'home';
+let screen: 'home' | 'exercise' | 'result' | 'parents' = 'home';
 let level = 1;
 let kind: Kind = 'read';
 let session: Question[] = [];
@@ -26,6 +28,17 @@ let displayed: Time = {
 let serial = 0;
 let feedback = '';
 let expression: Expression = 'concentre';
+// Learning follow-up of the current session (see engine/mastery.ts).
+let submissions: Submission[] = [];
+let outcomes: Outcome[] = [];
+let validated = true;
+let gate: Gate | null = null;
+let gateOpen = false;
+let confirmErase = false;
+const reviewsOf = (key: string): Time[] => save.reviews[key] ?? [];
+function setReviews(key: string, times: Time[]): void {
+    save.reviews = Object.fromEntries(Object.entries({ ...save.reviews, [key]: times.slice(-MAX_REVIEWS) }).filter(([, list]) => list.length));
+}
 const tr = (fr: string, en: string): string => save.locale === 'fr' ? fr : en;
 const persist = (): void => writeSave(storage, save);
 const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
@@ -65,8 +78,9 @@ function button(text: string, id: string): string {
 
 function period(time: Time): string {
     const currentPeriod = dayPeriod(time);
-    const sun = currentPeriod === 'morning' || currentPeriod === 'afternoon';
-    const label = save.locale === 'fr' ? {
+    const twins = levelInfo(level).answers === 'twins';
+    const sun = twins ? time.h === 11 || time.h === 12 : currentPeriod === 'morning' || currentPeriod === 'afternoon';
+    const label = twins ? tr(sun ? 'jour' : 'nuit', sun ? 'day' : 'night') : save.locale === 'fr' ? {
         night: 'nuit', morning: 'matin', afternoon: 'après-midi', evening: 'soir'
     }[currentPeriod] : currentPeriod;
     const icon = sun
@@ -79,12 +93,23 @@ function period(time: Time): string {
 
 function start(next = level): void {
     level = next;
-    kind = level === 8 ? 'read' : kind;
+    kind = levelInfo(level).readOnly ? 'read' : kind;
     serial++;
     session = generateSession(level, kind, serial * 7919 + level * 101);
+    // Times missed in an earlier session come back first.
+    reviewsOf(recordKey(level, kind)).forEach((target, index) => {
+        const slot = session[index]!;
+        const twin = session.findIndex(q => sameTime(q.target, target));
+        // Keep ten distinct targets: a planned duplicate takes the place the review leaves.
+        if (twin > index) session[twin] = { ...reviewQuestion(level, kind, slot.target, twin, session[twin]!.answer, session[twin]!.delta), review: false };
+        session[index] = reviewQuestion(level, kind, target, index, slot.answer, slot.delta);
+    });
     attempt = {
         score: 0, index: 0, missed: false
     };
+    submissions = [];
+    outcomes = [];
+    validated = true;
     screen = 'exercise';
     feedback = '';
     expression = 'concentre';
@@ -102,25 +127,54 @@ function resetClock(): void {
     };
 }
 
-function submit(correct: boolean): void {
+/** After a first mistake, a close exercise comes back three questions later, or at the start of the next session. */
+function scheduleReview(question: Question, confused?: Time): void {
+    const later = attempt.index + 3;
+    const planned = session.slice(attempt.index + 1).map(q => q.target);
+    if (later < session.length && !session[later]!.review) {
+        session[later] = nearQuestion(question, later, [question.target, ...planned], confused, session[later]!.answer);
+        return;
+    }
+    const key = recordKey(level, kind);
+    const near = nearQuestion(question, 0, [question.target, ...planned, ...reviewsOf(key)], confused).target;
+    setReviews(key, [...reviewsOf(key), near]);
+    persist();
+}
+
+function submit(correct: boolean, confused?: Time): void {
+    const question = session[attempt.index]!;
+    const now = performance.now();
+    const hasty = submissions.length > 0 && !submissions.at(-1)!.correct && now - submissions.at(-1)!.at < RAPID_MS;
+    if (!correct && !submissions.length) scheduleReview(question, confused);
+    submissions.push({ at: now, correct });
     attempt = answer(attempt, correct);
     if (!correct) {
-        feedback = tr('On réessaie ensemble ! Regarde la petite aiguille pour les heures, la grande pour les minutes.', 'Let’s try together! The short hand shows hours, the long hand shows minutes.');
+        feedback = hasty
+            ? tr('Doucement ! Regarde bien les aiguilles avant de choisir.', 'Slow down! Look at the hands before you choose.')
+            : tr('On réessaie ensemble ! Regarde la petite aiguille pour les heures, la grande pour les minutes.', 'Let’s try together! The short hand shows hours, the long hand shows minutes.');
         expression = 'surprise';
         updateGuide();
         return;
     }
-    const solved = session[attempt.index - 1]!;
+    const outcome = questionOutcome(submissions, kind);
+    outcomes.push(outcome);
+    submissions = [];
+    const key = recordKey(level, kind);
+    if (question.review && outcome === 'sure') setReviews(key, reviewsOf(key).filter(t => !sameTime(t, question.target)));
+    const solved = question;
     const digital = root.querySelector('#digital');
     if (digital) {
-        digital.textContent = formatDigital(solved.target, level === 6 || level === 8 ? '24' : '12');
+        digital.textContent = formatDigital(solved.target, digitalStyle(level));
         digital.removeAttribute('aria-label');
     }
     sparkleAnswer(root.querySelector(kind === 'set' ? '#clock' : '.answers .correct'));
     expression = 'joie';
     feedback = tr('Bravo, tu as trouvé !', 'Well done, you found it!');
     if (attempt.index === session.length) {
-        save.records = recordBest(save.records, level, kind, attempt.score);
+        // A burst of quick tries does not validate the session; the follow-up records it either way.
+        validated = sessionValidates(outcomes);
+        if (validated) save.records = recordBest(save.records, level, kind, attempt.score);
+        save.mastery[key] = recordSession(save.mastery[key], outcomes, localDay(new Date()));
         persist();
         screen = 'result';
         render();
@@ -172,9 +226,11 @@ function render(): void {
             </button>`).join('');
         const levelButtons = levels.map((info, index) => {
             const number = index + 1;
-            const score = save.records[recordKey(number, number === 8 ? 'read' : kind)] ?? 0;
+            const key = recordKey(number, info.readOnly ? 'read' : kind);
+            const score = save.records[key] ?? 0;
             const available = unlocked(save.records, number);
-            return `<button data-level="${number}" ${available ? '' : 'disabled'}>
+            const mastered = masteryState(save.mastery[key], reviewsOf(key).length) === 'mastered';
+            return `<button data-level="${number}" ${available ? '' : 'disabled'} ${mastered ? 'data-mastered="true"' : ''}>${mastered ? `<svg class="level-ribbon" viewBox="0 0 32 40" role="img" aria-label="${tr('Leçon acquise', 'Lesson mastered')}"><path d="M9 22 4 39l8-5 4 6 3-15M23 22l5 17-8-5-4 6-3-15" fill="#d9475f" stroke="#7c2236" stroke-width="1.5"/><circle cx="16" cy="15" r="12" fill="#ffd442" stroke="#996017" stroke-width="2"/><path d="m10 15 4 4 8-8" fill="none" stroke="#7a4b07" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
                 <b><i class="level-number" aria-hidden="true">${number}</i>${number}. ${info[save.locale]}</b>
                 <span aria-label="${stars(score)} ${tr('étoiles', 'stars')}">
                     ${'★'.repeat(stars(score))}${'☆'.repeat(3 - stars(score))} ${available ? '' : '<svg class="level-lock" viewBox="0 0 24 24" aria-label="Verrouillé / Locked" role="img"><path d="M7 10V7a5 5 0 0 1 10 0v3M5 10h14v12H5Z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="16" r="2" fill="currentColor"/></svg>'}
@@ -198,7 +254,14 @@ function render(): void {
                 <button id="set" aria-pressed="${kind === 'set'}">${tr('Régler', 'Set')}</button>
             </fieldset>
             <div class="levels glass">${levelButtons}</div>
-            <footer>${tr('Sans publicité. Tout reste sur cet appareil.', 'No ads. Everything stays on this device.')} · 0.3.0</footer>`;
+            <footer><button id="parents" class="parents-link">${tr('Espace parents', 'For parents')}</button>${tr('Sans publicité. Tout reste sur cet appareil.', 'No ads. Everything stays on this device.')} · 0.4.0</footer>`;
+        root.querySelector('#parents')?.addEventListener('click', () => {
+            screen = 'parents';
+            gate = makeGate(Math.random);
+            gateOpen = false;
+            confirmErase = false;
+            render();
+        });
         root.querySelector<HTMLSelectElement>('#locale')?.addEventListener('change', event => {
             save.locale = (event.target as HTMLSelectElement).value as Locale;
             persist();
@@ -217,8 +280,9 @@ function render(): void {
         return;
     }
     if (screen === 'result') {
-        const starCount = stars(attempt.score);
-        feedback = starCount ? tr('Tu progresses ! Quelle belle découverte !', 'Great work! You’re getting the hang of it!') : tr('On réessaie ensemble, à ton rythme.', 'Let’s try again together, at your own pace.');
+        const starCount = validated ? stars(attempt.score) : 0;
+        feedback = !validated ? tr('Oups, trop vite ! Les étoiles se gagnent en prenant le temps de regarder l’horloge.', 'Whoops, too fast! Stars are earned by taking time to look at the clock.')
+            : starCount ? tr('Tu progresses ! Quelle belle découverte !', 'Great work! You’re getting the hang of it!') : tr('On réessaie ensemble, à ton rythme.', 'Let’s try again together, at your own pace.');
         root.innerHTML = `
             ${button(tr('Accueil', 'Home'), 'back')}
             <h1>${tr('Série terminée !', 'Session complete!')}</h1>
@@ -227,23 +291,47 @@ function render(): void {
             </div>
             <p class="score">${attempt.score}/10</p>${guide()}
             ${button(tr('Encore', 'Again'), 'again')}
-            ${level < 8 && unlocked(save.records, level + 1) ? button(tr('Niveau suivant', 'Next level'), 'next') : ''}`;
+            ${level < levels.length && unlocked(save.records, level + 1) ? button(tr('Niveau suivant', 'Next level'), 'next') : ''}`;
         root.querySelector('#again')?.addEventListener('click', () => start());
         root.querySelector('#next')?.addEventListener('click', () => start(level + 1));
+    } else if (screen === 'parents') {
+        root.innerHTML = gateOpen ? parentsHtml(save, save.locale, confirmErase) : gateHtml(gate!, save.locale);
+        root.querySelector<HTMLFormElement>('#gate')?.addEventListener('submit', event => {
+            event.preventDefault();
+            const value = Number(root.querySelector<HTMLInputElement>('#gate-answer')?.value);
+            if (value === gate!.a * gate!.b) {
+                gateOpen = true;
+                render();
+                root.querySelector<HTMLElement>('.parents h1')?.focus();
+            } else {
+                gate = makeGate(Math.random);
+                render();
+                root.querySelector('#gate-message')!.textContent = tr('Ce n’est pas ça. Voici un autre calcul.', 'Not quite. Here is another one.');
+            }
+        });
+        root.querySelector('#erase')?.addEventListener('click', () => {
+            if (!confirmErase) {
+                confirmErase = true;
+                render();
+                return;
+            }
+            save.mastery = {};
+            save.reviews = {};
+            persist();
+            confirmErase = false;
+            render();
+        });
     } else {
         const question = session[attempt.index]!;
-        const style = level === 6 || level === 8 ? '24' : '12';
+        const style = digitalStyle(level);
+        const info = levelInfo(level);
         const instruction = levelInfo(level).instructions[save.locale] [kind].replace('{n}', String(question.delta));
         const promptTime = level === 7 ? question.start : question.target;
         const settingPrompt = kind === 'set' ? `
-            <p id="target">${say(promptTime, save.locale, style)} · ${formatDigital(promptTime, style)}</p>
+            <p id="target">${info.answers === 'digits' ? `<span class="target-digits">${formatDigital(promptTime, style)}</span>` : `${say(promptTime, save.locale, style)} · ${formatDigital(promptTime, style)}`}</p>
             ${level === 7 ? `<p>${tr('Départ', 'Start')}: ${formatDigital(question.start)}</p>` : ''}` : '';
-        const answers = question.choices.map((time, index) => {
-            const label = level === 8 ? moment(time)[save.locale]
-                : level === 6 ? `${formatDigital(time, '24')}<small>${say(time, save.locale, '24')}</small>`
-                : say(time, save.locale, style);
-            return `<button data-answer="${index}">${label}</button>`;
-        }).join('');
+        const answers = question.choices.map((time, index) => `<button data-answer="${index}" class="${info.answers === 'digits' ? 'digits' : ''}">${answerLabel(time, level, save.locale)}</button>`).join('');
+        const review = question.review ? `<p class="review-badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>${tr('On revoit celle-ci !', 'Let’s see this one again!')}</p>` : '';
         const dots = session.map((_, index) => {
             const state = index < attempt.index ? 'done' : index === attempt.index ? 'current' : '';
             return `<span class="${state}">${index + 1}</span>`;
@@ -262,11 +350,11 @@ function render(): void {
         const canSpeak = 'speechSynthesis' in window && speechSynthesis.getVoices().some(voice => voice.localService && voice.lang.startsWith(save.locale));
         root.innerHTML = `
             <nav>${button(tr('Retour', 'Back'), 'back')}<span class="level-label">${levelInfo(level)[save.locale]}</span>${canSpeak ? button(tr('Écouter', 'Listen'), 'listen') : ''}</nav>
-            <section class="glass prompt"><h1 class="instruction">${instruction}</h1>${settingPrompt}</section>
+            <section class="glass prompt">${review}<h1 class="instruction">${instruction}</h1>${settingPrompt}</section>
             <div class="clock-wrap">
-                ${clockSvg(displayed, save.locale, kind === 'set', level === 1)}
+                ${clockSvg(displayed, save.locale, kind === 'set', level === 1, info.dial)}
                 <output id="digital" ${kind === 'read' ? `aria-label="${tr('À toi de trouver', 'Your turn to find out')}"` : ''}>${kind === 'read' ? '--:--' : formatDigital(displayed, style)}</output>
-                ${level === 6 || level === 8 ? period(displayed) : ''}
+                ${info.sky ? period(displayed) : ''}
             </div>
             ${halfDay}
             <div class="dots" aria-label="${attempt.index + 1}/10">${dots}</div>${guide()}
@@ -286,7 +374,7 @@ function render(): void {
                 h: displayed.h % 12 + Number(control.dataset.half) * 12, m: displayed.m
             })));
         }
-        root.querySelector('#check')?.addEventListener('click', () => submit(matchesSetting(question, displayed)));
+        root.querySelector('#check')?.addEventListener('click', () => submit(matchesSetting(question, displayed), displayed));
         let solved = false;
         root.querySelectorAll<HTMLButtonElement>('[data-answer]').forEach(control => control.addEventListener('click', () => {
             if (solved) return;
@@ -296,7 +384,7 @@ function render(): void {
                 solved = true;
                 control.insertAdjacentHTML('beforeend', '<span class="answer-check" aria-hidden="true">✓</span>');
             }
-            submit(correct);
+            submit(correct, question.choices[Number(control.dataset.answer)]);
         }));
         root.querySelector('#listen')?.addEventListener('click', () => {
             const voice = new SpeechSynthesisUtterance(spokenPrompt(question, save.locale));
@@ -318,7 +406,7 @@ const hook = Object.freeze({
     state: () => {
         const rect = root.querySelector('#clock')?.getBoundingClientRect();
         return structuredClone({
-            scene: document.body.dataset.scene, screen, level, kind, index: attempt.index, question: session[attempt.index] ?? null, displayed, score: attempt.score, dial: rect ? {
+            scene: document.body.dataset.scene, screen, level, kind, index: attempt.index, question: session[attempt.index] ?? null, displayed, score: attempt.score, outcomes, validated, dial: rect ? {
                 cx: rect.left + rect.width / 2, cy: rect.top + rect.height / 2, radius: rect.width * 154 / 320, hourRadius: rect.width * 83 / 320, minuteRadius: rect.width * 126 / 320
             } : null
         });

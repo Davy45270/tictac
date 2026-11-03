@@ -1,6 +1,7 @@
 import { test, expect, state, readSession } from './helpers';
 import { hourAngle, minuteAngle } from '../../src/engine/time';
 import { say } from '../../src/engine/text';
+import { levels } from '../../src/engine/levels';
 
 test('ten first-try answers unlock the next level and persist', async ({
     page
@@ -74,7 +75,7 @@ test('touch controls are large and minute hand responds to arrows', async ({
     await page.goto('/');
     for (let level = 1; level <= 7; level++) {
         await page.locator('#set').click();
-        await expect(page.locator('[data-level]')).toHaveCount(8);
+        await expect(page.locator('[data-level]')).toHaveCount(levels.length);
         await expect(page.locator(`[data-level="${level}"]`)).toHaveCount(1);
         await page.locator(`[data-level="${level}"]`).click();
         expect((await state(page)).level).toBe(level);
@@ -364,7 +365,7 @@ test('home level grid stays within a 360 by 640 viewport', async ({ page }) => {
     for (const locale of ['fr', 'en']) {
         await page.locator('#locale').selectOption(locale);
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
-        await expect(page.locator('[data-level]')).toHaveCount(8);
+        await expect(page.locator('[data-level]')).toHaveCount(levels.length);
         for (const button of await page.locator('[data-level]').all()) {
             await button.scrollIntoViewIfNeeded();
             const box = (await button.boundingBox())!;

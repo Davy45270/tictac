@@ -1,12 +1,15 @@
 import { minuteAngle, hourAngle, angleFromPoint, dragHour, dragMinute, addMinutes, type Time, type Step } from '../engine/time';
 import { say, type Locale } from '../engine/text';
+import type { Dial } from '../engine/levels';
+
+export const ROMAN = ['XII', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI'];
 
 export const point = (angle: number, radius: number): [number, number] => [
     160 + Math.sin(angle * Math.PI / 180) * radius,
     160 - Math.cos(angle * Math.PI / 180) * radius
 ];
 
-export function clockSvg(time: Time, locale: Locale, adjustable: boolean, hoursOnly: boolean): string {
+export function clockSvg(time: Time, locale: Locale, adjustable: boolean, hoursOnly: boolean, dial: Dial = 'arabic'): string {
     const hand = (id: string, angle: number, radius: number, color: string, width: number): string => {
         const [x, y] = point(angle, radius);
         const label = locale === 'fr'
@@ -22,16 +25,26 @@ export function clockSvg(time: Time, locale: Locale, adjustable: boolean, hoursO
         <path class="hand-shape" pointer-events="none" transform="rotate(${angle} 160 160)" d="M160 ${160-radius}Q${160-width*1.4} ${174-radius} ${160-width/2} 150Q${160-width} 173 160 177Q${160+width} 173 ${160+width/2} 150Q${160+width*1.4} ${174-radius} 160 ${160-radius}Z" fill="${color}" stroke="#fff6dc" stroke-width="1.5"/>
         </g>`;
     };
+    // Without numbers, like a grown-up watch: long hour batons, doubled at twelve, three, six and nine.
     const ticks = Array.from({length: 60}, (_, index) => {
-        const start = point(index * 6, index % 5 ? 143 : 138);
+        const start = point(index * 6, index % 5 ? 143 : dial === 'none' ? (index % 15 ? 122 : 112) : 138);
         const end = point(index * 6, 149);
-        return `<line x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}" stroke="#48616b" stroke-width="${index % 5 ? 1 : 3}"/>`;
+        if (dial === 'none' && index % 15 === 0) {
+            const offset = (side: number): string => {
+                const shift = (p: [number, number]): [number, number] => [p[0] + Math.cos(index * 6 * Math.PI / 180) * side, p[1] + Math.sin(index * 6 * Math.PI / 180) * side];
+                const [a, b] = [shift(start), shift(end)];
+                return `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#2f4858" stroke-width="5" stroke-linecap="round"/>`;
+            };
+            return offset(-4) + offset(4);
+        }
+        return `<line x1="${start[0]}" y1="${start[1]}" x2="${end[0]}" y2="${end[1]}" stroke="${dial === 'none' ? '#2f4858' : '#48616b'}" stroke-width="${index % 5 ? 1 : dial === 'none' ? 6 : 3}" stroke-linecap="${dial === 'none' && index % 5 === 0 ? 'round' : 'butt'}"/>`;
     }).join('');
-    const numbers = Array.from({length: 12}, (_, index) => {
-        const [x, y] = point((index + 1) * 30, 119);
-        return `<text x="${x}" y="${y}" class="${(index + 1) % 3 === 0 ? 'cardinal' : ''}" text-anchor="middle" dominant-baseline="central">${index + 1}</text>`;
+    const numbers = dial === 'none' ? '' : Array.from({length: 12}, (_, index) => {
+        const [x, y] = point((index + 1) * 30, dial === 'roman' ? 116 : 119);
+        const label = dial === 'roman' ? ROMAN[(index + 1) % 12]! : String(index + 1);
+        return `<text x="${x}" y="${y}" class="${(index + 1) % 3 === 0 ? 'cardinal' : ''}${dial === 'roman' ? ' roman' : ''}" text-anchor="middle" dominant-baseline="central">${label}</text>`;
     }).join('');
-    return `<svg id="clock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" aria-label="${locale === 'fr' ? 'Horloge' : 'Clock'}">
+    return `<svg id="clock" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" data-dial="${dial}" aria-label="${locale === 'fr' ? dial === 'none' ? 'Horloge sans chiffres' : dial === 'roman' ? 'Horloge en chiffres romains' : 'Horloge' : dial === 'none' ? 'Clock without numbers' : dial === 'roman' ? 'Clock with Roman numerals' : 'Clock'}">
         <defs><linearGradient id="case" x2=".8" y2="1"><stop stop-color="#b4f8f0"/><stop offset=".35" stop-color="#39b5bf"/><stop offset="1" stop-color="#17506c"/></linearGradient><radialGradient id="face" cx=".35" cy=".25" r=".8"><stop stop-color="#fffef6"/><stop offset="1" stop-color="#f5e4bc"/></radialGradient><radialGradient id="hub" cx=".3" cy=".2"><stop stop-color="#fff9c4"/><stop offset=".45" stop-color="#ffda5b"/><stop offset="1" stop-color="#b46b18"/></radialGradient></defs>
         <g pointer-events="none" aria-hidden="true"><path d="M44 34Q25 3 51 -7Q75 -17 88 8ZM232 8Q245 -17 269 -7Q295 3 276 34Z" fill="url(#case)" stroke="#20516a" stroke-width="4"/><path d="M70 294 60 324M250 294l10 30" stroke="#20516a" stroke-width="12" stroke-linecap="round"/></g>
         <g pointer-events="none"><circle cx="160" cy="160" r="157" fill="url(#case)" stroke="#20516a" stroke-width="4"/><circle cx="160" cy="160" r="145" fill="url(#face)" stroke="#c7f0e7" stroke-width="3"/><path d="M35 91A144 144 0 0 1 225 29" fill="none" stroke="#fff" opacity=".65" stroke-width="6" stroke-linecap="round"/></g>

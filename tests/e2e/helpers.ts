@@ -3,7 +3,10 @@ import type { Question } from '../../src/engine/session';
 import type { Time } from '../../src/engine/time';
 
 export interface State {
+    scene: string;
     screen: string;
+    outcomes: string[];
+    validated: boolean;
     level: number;
     kind: string;
     index: number;
