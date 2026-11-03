@@ -127,7 +127,8 @@ test('two calm perfect sessions master a lesson; the follow-up survives a reload
     await page.locator('#erase').click();
     await expect(page.locator('[data-key="1.read"]')).toHaveAttribute('data-state', 'mastered');
     await page.locator('#erase').click();
-    await expect(page.locator('[data-key="1.read"]')).toHaveAttribute('data-state', 'new');
+    await expect(page.locator('[data-key="1.read"]')).toHaveCount(0);
+    await expect(page.locator('.follow.unplayed')).toHaveCount(12);
     await page.locator('#back').click();
     await expect(page.locator('[data-mastered]')).toHaveCount(0);
 });

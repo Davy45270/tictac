@@ -33,21 +33,23 @@ const label = (state: MasteryState, locale: Locale): string => ({
 })[state];
 
 export function parentsHtml(save: Save, locale: Locale, confirmErase: boolean): string {
-    const rows = levels.flatMap((info, index) => {
+    const rows = levels.map((info, index) => {
         const level = index + 1;
-        return (info.readOnly ? ['read'] as const : ['read', 'set'] as const).map(kind => {
+        const lines = (info.readOnly ? ['read'] as const : ['read', 'set'] as const).flatMap(kind => {
             const key = recordKey(level, kind);
             const entry = save.mastery[key];
+            if (!entry) return [];
             const pending = save.reviews[key]?.length ?? 0;
             const state = masteryState(entry, pending);
             const c = counts(entry);
             const best = stars(save.records[key] ?? 0);
-            return `<li class="follow" data-key="${key}" data-state="${state}">
-                <div class="follow-head"><b>${level}. ${info[locale]}</b><span class="follow-kind">${kind === 'read' ? t(locale, 'Lire', 'Read') : t(locale, 'Régler', 'Set')}</span><span class="badge badge-${state}">${label(state, locale)}</span></div>
-                ${entry ? `<div class="meter" role="img" aria-label="${c.sure}/${c.total} ${t(locale, 'du premier coup', 'first try')}">${letters(entry.recent).map(o => `<i class="o-${o}"></i>`).join('')}</div>
-                <p class="follow-facts"><span>${t(locale, 'Du premier coup', 'First try')} : <b>${c.sure}/${c.total}</b></span><span>${t(locale, 'Essais au hasard', 'Random tries')} : <b>${c.guess}</b></span><span>${t(locale, 'À revoir', 'To review')} : <b>${pending}</b></span><span>${'★'.repeat(best)}${'☆'.repeat(3 - best)}</span><span>${t(locale, 'Séries', 'Sessions')} : ${entry.sessions} · ${entry.last}</span></p>` : ''}
-            </li>`;
+            return [`<div class="follow-kind-row" data-key="${key}" data-state="${state}">
+                <div class="follow-head"><span class="follow-kind">${kind === 'read' ? t(locale, 'Lire', 'Read') : t(locale, 'Régler', 'Set')}</span><span class="badge badge-${state}">${label(state, locale)}</span><span class="follow-stars" aria-label="${best} ${t(locale, 'étoiles', 'stars')}">${'★'.repeat(best)}${'☆'.repeat(3 - best)}</span></div>
+                <div class="meter" role="img" aria-label="${c.sure}/${c.total} ${t(locale, 'du premier coup', 'first try')}">${letters(entry.recent).map(o => `<i class="o-${o}"></i>`).join('')}</div>
+                <p class="follow-facts"><span>${t(locale, 'Du premier coup', 'First try')} : <b>${c.sure}/${c.total}</b></span><span>${t(locale, 'Essais au hasard', 'Random tries')} : <b>${c.guess}</b></span><span>${t(locale, 'À revoir', 'To review')} : <b>${pending}</b></span><span>${t(locale, 'Séries', 'Sessions')} : ${entry.sessions} · ${entry.last}</span></p>
+            </div>`];
         });
+        return `<li class="follow${lines.length ? '' : ' unplayed'}"><div class="follow-title"><b>${level}. ${info[locale]}</b>${lines.length ? '' : `<span class="badge badge-new">${label('new', locale)}</span>`}</div>${lines.join('')}</li>`;
     }).join('');
     const played = Object.keys(save.mastery).length;
     const mastered = levels.flatMap((info, index) => (info.readOnly ? ['read'] as const : ['read', 'set'] as const).map(kind => recordKey(index + 1, kind)))
