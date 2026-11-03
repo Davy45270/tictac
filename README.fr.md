@@ -22,8 +22,12 @@ Interface française sur un téléphone en portrait de 390 × 844 pixels.
 | <img src="docs/screenshots/home.png" width="220" alt="Accueil en français avec Boubou sélectionné et les étoiles des niveaux terminés"> | <img src="docs/screenshots/read.png" width="220" alt="Horloge analogique du niveau 3 et quatre réponses en quarts d’heure avant de choisir"> |
 | Régler par tranches de cinq minutes (niveau 4) | Série à trois étoiles |
 | <img src="docs/screenshots/set.png" width="220" alt="Horloge du niveau 4 après glissement de l’aiguille des minutes, affichage numérique à 3:20"> | <img src="docs/screenshots/stars.png" width="220" alt="Fin de série avec trois étoiles et dix bonnes réponses sur dix"> |
+| Chiffres romains (niveau 11) | Midi ou minuit sous le ciel de nuit (niveau 12) |
+| <img src="docs/screenshots/roman.png" width="220" alt="Horloge jouet en chiffres romains de I à XII et quatre réponses en lettres"> | <img src="docs/screenshots/noon.png" width="220" alt="Paysage de nuit avec la lune, l’horloge près de midi ou minuit et quatre réponses"> |
+| Suivi des parents | |
+| <img src="docs/screenshots/parents.png" width="220" alt="Suivi des parents : leçons acquises ou en cours et réponses justes du premier coup"> | |
 
-Après compilation (`npm run build`) et installation de Chromium (`npx playwright install chromium`), régénérer les quatre images avec `npm run screenshots`. Le scénario mobile activé à la demande écrit les PNG de la fenêtre dans `docs/screenshots/` ; ces images de documentation restent hors du build et du précache PWA.
+Après compilation (`npm run build`) et installation de Chromium (`npx playwright install chromium`), régénérer les sept images avec `npm run screenshots`. Le scénario mobile activé à la demande écrit les PNG de la fenêtre dans `docs/screenshots/` ; ces images de documentation restent hors du build et du précache PWA.
 
 ## Installer et développer
 

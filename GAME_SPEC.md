@@ -35,6 +35,21 @@ Les plages du niveau 8 sont disjointes et couvrent la journée. Les bornes droit
 
 Chaque distracteur du niveau 8 représente un autre moment distinct et une heure à au moins 180 minutes de la cible, distance circulaire sur 24 h. Il n’existe donc qu’une catégorie correcte.
 
+## Niveaux 9 à 12 (0.4.0)
+
+9. En chiffres : h 0–11, pas 5 ; les propositions sont des heures numériques (`3:45`) ; en réglage, la consigne n’affiche que l’heure numérique.
+10. Sans chiffres : même domaine, cadran sans nombres (bâtons d’heures, doublés à 12, 3, 6 et 9), propositions numériques.
+11. Chiffres romains : même domaine, cadran de I à XII, propositions en lettres.
+12. Midi ou minuit : lecture seule. Cibles 11:35–12:30 et 23:35–00:30 au pas 5, c’est-à-dire les heures que les mots disent « midi » ou « minuit ». Les propositions sont la cible, sa jumelle à ±12 h, et une voisine de chacune décalée d’un même écart (±5, ±10 ou ±15 min) : deux paires identiques sur le cadran. Le ciel suit le cadran (jour pour 11 h et 12 h, nuit pour 23 h et 0 h) avec un repère soleil ou lune ; les propositions s’écrivent en 24 h avec les mots, l’anglais disant noon et midnight.
+
+Chaque niveau se débloque par deux étoiles sur son prérequis (l’un des sens) : 1→2→…→8, 4→9, 9→10, 9→11, 6→12.
+
+## Suivi de l’apprentissage
+
+Chaque question se clôt par un résultat : **sûr** (juste au premier essai), **réessai** (juste après une erreur, calmement) ou **hasard** (une réponse moins d’une seconde après une erreur, ou en lecture les trois mauvaises propositions essayées). À la première erreur sur une question, un exercice proche est planifié trois questions plus loin, ou au début de la série suivante s’il n’y a plus la place (au plus trois en attente par niveau et sens) : l’heure confondue si elle est légale, sinon une voisine (jumelle à 12 h, aiguilles inversées, ±1 h, ±un pas). Une révision réussie du premier coup sort de la liste. Une série qui compte trois résultats « hasard » ou plus ne valide pas ses étoiles (aucun record, aucun déblocage). La maîtrise d’un niveau et d’un sens est acquise quand les 20 derniers résultats (deux séries) comptent au moins 18 « sûr », aucun « hasard » et plus aucune révision en attente. Une simulation de 2 000 enfants sur 20 séries vérifie qu’un joueur au hasard, lent ou rapide, n’atteint jamais la maîtrise, qu’un joueur hésitant entre deux réponses l’atteint dans moins de 1 % des cas, et qu’un enfant à 95 % de réussite l’atteint en deux séries en médiane.
+
+Le suivi est rangé dans la même sauvegarde locale (`mastery`, `reviews`), validé à la lecture comme les scores. L’espace parents s’ouvre après une multiplication ; il peut effacer le suivi en deux appuis. Un test interdit tout canal réseau dans le code de l’application.
+
 ## Génération
 
 Le PRNG entier est mulberry32. Même niveau, sens, graine et taille donnent exactement la même série. Un mélange du domaine légal garantit dix cibles distinctes ; en niveau 7, le départ est dérivé de la cible pour éviter les collisions après addition. Les quatre choix sont distincts aussi sur le cadran. La cible apparaît exactement une fois. Les candidats privilégient ±1 heure, ±un pas et aiguilles inversées si valides, puis complètent dans le domaine légal. Les niveaux 1 à 7 conservent au moins un distracteur à ±un pas lorsqu’il est valide, en plus d’un voisin à ±1 heure ou d’aiguilles inversées valides (ces critères peuvent coïncider au pas 60). Les positions correctes tournent entre les quatre cases avec un décalage issu de la graine. Les séries de taille invalide lèvent RangeError.

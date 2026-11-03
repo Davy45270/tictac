@@ -24,8 +24,12 @@ French interface on a 390 × 844 portrait phone.
 | <img src="docs/screenshots/home.png" width="220" alt="French home screen with Boubou selected and stars earned on completed levels"> | <img src="docs/screenshots/read.png" width="220" alt="Level 3 analog clock and four quarter-hour answers before a choice is made"> |
 | Setting five-minute steps (level 4) | Three-star session |
 | <img src="docs/screenshots/set.png" width="220" alt="Level 4 clock after dragging the minute hand, with the digital display showing 3:20"> | <img src="docs/screenshots/stars.png" width="220" alt="Completed session with three stars and ten correct answers out of ten"> |
+| Roman numerals (level 11) | Noon or midnight under the night sky (level 12) |
+| <img src="docs/screenshots/roman.png" width="220" alt="Toy clock with Roman numerals I to XII and four answers in words"> | <img src="docs/screenshots/noon.png" width="220" alt="Night landscape with a moon, the clock near twelve and four answers mixing noon and midnight"> |
+| Parents' follow-up | |
+| <img src="docs/screenshots/parents.png" width="220" alt="Parents' follow-up listing mastered and in-progress lessons with first-try counts"> | |
 
-After building (`npm run build`) and installing Chromium (`npx playwright install chromium`), regenerate all four images with `npm run screenshots`. The opt-in mobile spec writes viewport PNGs to `docs/screenshots/`; they are documentation assets, excluded from the app build and PWA precache.
+After building (`npm run build`) and installing Chromium (`npx playwright install chromium`), regenerate all seven images with `npm run screenshots`. The opt-in mobile spec writes viewport PNGs to `docs/screenshots/`; they are documentation assets, excluded from the app build and PWA precache.
 
 ## Development
 
