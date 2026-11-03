@@ -71,7 +71,8 @@ test('set five-minute steps after dragging the minute hand', async ({ page, cont
 });
 
 async function advanced(page: Page): Promise<void> {
-    await page.evaluate(() => localStorage.setItem('tictac.v1', JSON.stringify({
+    // Registered after the default save, so it wins on reload.
+    await page.addInitScript(() => localStorage.setItem('tictac.v1', JSON.stringify({
         version: 1, locale: 'fr', guide: 'panda', records: {
             '1.read': 10, '2.read': 9, '3.read': 9, '4.read': 9, '5.read': 8, '6.read': 9, '7.read': 7, '8.read': 9, '9.read': 9, '10.read': 7
         },
