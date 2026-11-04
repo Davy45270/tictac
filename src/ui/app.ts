@@ -6,6 +6,7 @@ import { sameTime, type Time } from '../engine/time';
 import { answerLabel, formatDigital, say, spokenPrompt, type Locale } from '../engine/text';
 import { questionOutcome, sessionValidates, recordSession, masteryState, localDay, RAPID_MS, MAX_REVIEWS, type Outcome, type Submission } from '../engine/mastery';
 import { parentsHtml, gateHtml, makeGate, type Gate } from './parents';
+import { otherGamesHtml, otherGamesLabel } from './other-games';
 import { answer, stars, recordBest, unlocked, recordKey, type Attempt } from '../engine/progress';
 import { readSave, writeSave, browserStorage } from '../shell/storage';
 import { clockSvg, wireClock } from './clock';
@@ -15,7 +16,7 @@ import { buttonColors, sceneColors } from './contrast';
 const root = document.querySelector<HTMLElement>('#app')!;
 const storage = browserStorage();
 const save = readSave(storage, navigator.language.startsWith('en') ? 'en' : 'fr');
-let screen: 'home' | 'exercise' | 'result' | 'parents' = 'home';
+let screen: 'home' | 'exercise' | 'result' | 'parents' | 'games' = 'home';
 let level = 1;
 let kind: Kind = 'read';
 let session: Question[] = [];
@@ -257,7 +258,12 @@ function render(): void {
                 <button id="set" aria-pressed="${kind === 'set'}">${tr('Régler', 'Set')}</button>
             </fieldset>
             <div class="levels glass">${levelButtons}</div>
-            <footer><button id="parents" class="parents-link">${tr('Espace parents', 'For parents')}</button>${tr('Sans publicité. Tout reste sur cet appareil.', 'No ads. Everything stays on this device.')} · 0.4.0</footer>`;
+            <footer><button id="other-games" class="parents-link">${otherGamesLabel(save.locale)}</button><button id="parents" class="parents-link">${tr('Espace parents', 'For parents')}</button>${tr('Sans publicité. Tout reste sur cet appareil.', 'No ads. Everything stays on this device.')} · 0.5.0</footer>`;
+        root.querySelector('#other-games')?.addEventListener('click', () => {
+            screen = 'games';
+            render();
+            root.querySelector<HTMLElement>('#other-games-title')?.focus();
+        });
         root.querySelector('#parents')?.addEventListener('click', () => {
             screen = 'parents';
             gate = makeGate(Math.random);
@@ -297,6 +303,8 @@ function render(): void {
             ${level < levels.length && unlocked(save.records, level + 1) ? button(tr('Niveau suivant', 'Next level'), 'next') : ''}`;
         root.querySelector('#again')?.addEventListener('click', () => start());
         root.querySelector('#next')?.addEventListener('click', () => start(level + 1));
+    } else if (screen === 'games') {
+        root.innerHTML = otherGamesHtml(save.locale);
     } else if (screen === 'parents') {
         root.innerHTML = gateOpen ? parentsHtml(save, save.locale, confirmErase) : gateHtml(gate!, save.locale);
         root.querySelector<HTMLFormElement>('#gate')?.addEventListener('submit', event => {

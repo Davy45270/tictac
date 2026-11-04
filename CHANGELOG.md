@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.0
+
+- “My other games” on the home screen: a short list of the author's three other games (Opencade, Opencadkid, Petit Astronome), each with its icon and one sentence, opened in the same tab.
+- The list and its icons ship with the app, so the screen still shows offline; the network guard now allows these three plain links and nothing else.
+
 ## 0.4.0
 
 - Four new lessons: answers written as digital times, a dial without numbers like a grown-up watch, a Roman-numeral dial, and “noon or midnight” where the sky tells the half of the day.
