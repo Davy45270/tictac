@@ -7,6 +7,7 @@ import { answerLabel, formatDigital, say, spokenPrompt, type Locale } from '../e
 import { questionOutcome, sessionValidates, recordSession, masteryState, localDay, RAPID_MS, MAX_REVIEWS, type Outcome, type Submission } from '../engine/mastery';
 import { parentsHtml, gateHtml, makeGate, type Gate } from './parents';
 import { otherGamesHtml, otherGamesLabel } from './other-games';
+import { feedbackLinkHtml } from './feedback';
 import { answer, stars, recordBest, unlocked, recordKey, type Attempt } from '../engine/progress';
 import { readSave, writeSave, browserStorage } from '../shell/storage';
 import { clockSvg, wireClock } from './clock';
@@ -258,7 +259,7 @@ function render(): void {
                 <button id="set" aria-pressed="${kind === 'set'}">${tr('Régler', 'Set')}</button>
             </fieldset>
             <div class="levels glass">${levelButtons}</div>
-            <footer><button id="other-games" class="parents-link">${otherGamesLabel(save.locale)}</button><button id="parents" class="parents-link">${tr('Espace parents', 'For parents')}</button>${tr('Sans publicité. Tout reste sur cet appareil.', 'No ads. Everything stays on this device.')} · 0.5.0</footer>`;
+            <footer><button id="other-games" class="parents-link">${otherGamesLabel(save.locale)}</button><button id="parents" class="parents-link">${tr('Espace parents', 'For parents')}</button>${feedbackLinkHtml(save.locale)}${tr('Sans publicité. Tout reste sur cet appareil.', 'No ads. Everything stays on this device.')} · 0.5.0</footer>`;
         root.querySelector('#other-games')?.addEventListener('click', () => {
             screen = 'games';
             render();

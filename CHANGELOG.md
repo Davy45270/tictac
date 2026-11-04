@@ -1,5 +1,10 @@
 # Changelog
 
+## Non publié
+
+- “Donner mon avis” on the home screen: a plain link that opens the game's public feedback forms in a new tab (`rel="noopener"`). Nothing is sent from the app, and no tracker is involved.
+- Two short French feedback forms (“Quelque chose ne marche pas”, “J'ai une idée”) and a `CONTRIBUTING.md` explaining how to report.
+
 ## 0.5.0
 
 - “My other games” on the home screen: a short list of the author's three other games (Opencade, Opencadkid, Petit Astronome), each with its icon and one sentence, opened in the same tab.
